@@ -1,14 +1,17 @@
+import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import guideme42icon from '../assets/guideme42icon.png'
+import googlePlayIcon from '../assets/google-play-store-icon.webp'
 
 const productLinks = [
-  { href: '#features', label: 'Features' },
-  { href: '#features-section', label: 'How it works' },
+  { href: '/#features-section', label: 'Features' },
+  { href: '/#hero', label: 'How it works' },
+  { href: '/#about', label: 'About' },
 ]
 const companyLinks = [
-  { href: '#', label: 'About' },
-  { href: '#', label: 'Contact' },
-  { href: '#', label: 'Privacy' },
+  { href: '/#about', label: 'About' },
+  { href: '/support', label: 'Support' },
+  { href: '/privacy', label: 'Privacy' },
 ]
 const connectLinks = [
   { href: '#', label: 'Twitter' },
@@ -28,7 +31,7 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-12 lg:gap-8">
           {/* Brand column */}
           <div className="lg:col-span-5">
-            <a href="#" className="inline-flex items-center gap-3 mb-6">
+            <Link to="/" className="inline-flex items-center gap-3 mb-6">
               <img
                 src={guideme42icon}
                 alt="GuideMe42"
@@ -38,7 +41,7 @@ export default function Footer() {
                 <span className="text-white">GuideMe</span>
                 <span className="text-[#10b981]">42</span>
               </span>
-            </a>
+            </Link>
             <p className="text-zinc-400 text-lg max-w-sm leading-relaxed mb-8">
               Plan trips, discover places, split costs, and share guides—all in one app.
             </p>
@@ -60,10 +63,8 @@ export default function Footer() {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M3,20.5V3.5C3,2.91 3.34,2.39 3.84,2.15L13.69,12L3.84,21.85C3.34,21.6 3,21.09 3,20.5M16.81,15.12L6.05,21.34L14.54,12.85L16.81,15.12M20.16,10.81C20.5,11.08 20.75,11.5 20.75,12C20.75,12.5 20.53,12.9 20.18,13.18L17.89,14.5L15.39,12L17.89,9.5L20.16,10.81M6.05,2.66L16.81,8.88L14.54,11.15L6.05,2.66Z" />
-                </svg>
-                Google Play
+                <img src={googlePlayIcon} alt="Play Store" className="w-5 h-5 object-contain flex-shrink-0" />
+                Get it on Play Store
               </motion.a>
             </div>
           </div>
@@ -90,12 +91,21 @@ export default function Footer() {
               <ul className="space-y-3">
                 {companyLinks.map((link) => (
                   <li key={link.label}>
-                    <a
-                      href={link.href}
-                      className="text-zinc-400 hover:text-[#10b981] transition-colors text-sm"
-                    >
-                      {link.label}
-                    </a>
+                    {link.href.startsWith('/') ? (
+                      <Link
+                        to={link.href}
+                        className="text-zinc-400 hover:text-[#10b981] transition-colors text-sm"
+                      >
+                        {link.label}
+                      </Link>
+                    ) : (
+                      <a
+                        href={link.href}
+                        className="text-zinc-400 hover:text-[#10b981] transition-colors text-sm"
+                      >
+                        {link.label}
+                      </a>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -124,8 +134,9 @@ export default function Footer() {
             &copy; {new Date().getFullYear()} GuideMe42. All rights reserved.
           </p>
           <div className="flex items-center gap-6 text-sm">
-            <a href="#" className="text-zinc-500 hover:text-zinc-300 transition-colors">Terms</a>
-            <a href="#" className="text-zinc-500 hover:text-zinc-300 transition-colors">Privacy</a>
+            <Link to="/support" className="text-zinc-500 hover:text-zinc-300 transition-colors">Support</Link>
+            <Link to="/terms" className="text-zinc-500 hover:text-zinc-300 transition-colors">Terms</Link>
+            <Link to="/privacy" className="text-zinc-500 hover:text-zinc-300 transition-colors">Privacy</Link>
           </div>
         </div>
       </div>

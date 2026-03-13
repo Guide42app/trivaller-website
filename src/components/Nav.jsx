@@ -1,25 +1,41 @@
-import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { useState, useRef } from 'react'
+import { Link } from 'react-router-dom'
+import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion'
 import guideme42icon from '../assets/guideme42icon.png'
 
 const links = [
-  { href: '#features-section', label: 'Features' },
-  { href: '#download', label: 'Download' },
+  { href: '/#about', label: 'About' },
+  { href: '/#features-section', label: 'Features' },
+  { href: '/#download', label: 'Download' },
 ]
 
-export default function Nav() {
+export default function Nav({ featuresSectionRef }) {
   const [open, setOpen] = useState(false)
+  const fallbackRef = useRef(null)
+  const targetRef = featuresSectionRef || fallbackRef
+
+  const { scrollY } = useScroll()
+  const { scrollYProgress } = useScroll({
+    target: targetRef,
+    offset: ['start end', 'start start'],
+  })
+  const logoOpacity = useTransform(scrollY, [0, 280], [0, 1])
+  const navBg = useTransform(scrollYProgress, [0, 0.05], [0, 1])
+  const backgroundColor = useTransform(navBg, [0, 1], ['transparent', 'rgba(255,255,255,0.98)'])
+  const backdropFilter = useTransform(navBg, [0, 1], ['none', 'blur(8px)'])
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 px-6 py-4 bg-transparent">
+    <motion.nav
+      style={{ backgroundColor, backdropFilter }}
+      className="fixed top-0 left-0 right-0 z-50 px-6 py-4 bg-transparent"
+    >
       <div className="max-w-6xl mx-auto flex items-center justify-between">
-        <a
-          href="#"
-          className="flex items-center gap-2"
-        >
-          <img src={guideme42icon} alt="GuideMe42" className="h-9 w-9 md:h-10 md:w-10 object-cover rounded-full" />
-          <span className="text-xl font-semibold tracking-tight"><span className="text-black">GuideMe</span><span className="text-[#059669]">42</span></span>
-        </a>
+        <motion.div style={{ opacity: logoOpacity }} className="flex shrink-0">
+          <Link to="/" className="flex items-center gap-2">
+            <img src={guideme42icon} alt="GuideMe42" className="h-9 w-9 md:h-10 md:w-10 object-cover rounded-full" />
+            <span className="text-xl font-semibold tracking-tight"><span className="text-black">GuideMe</span><span className="text-[#059669]">42</span></span>
+          </Link>
+        </motion.div>
         <div className="hidden md:flex items-center gap-8">
           {links.map((l) => (
             <a
@@ -71,6 +87,6 @@ export default function Nav() {
           </motion.div>
         )}
       </AnimatePresence>
-    </nav>
+    </motion.nav>
   )
 }

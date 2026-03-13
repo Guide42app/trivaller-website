@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import googlePlayIcon from '../assets/google-play-store-icon.webp'
 
 export default function DownloadSection() {
   return (
@@ -49,12 +50,10 @@ export default function DownloadSection() {
             whileHover={{ scale: 1.03, y: -2 }}
             whileTap={{ scale: 0.98 }}
           >
-            <svg className="w-10 h-10" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M3 20.5v-17c0-.59.34-1.11.84-1.35l9.85 9.85-9.85 9.85c-.5-.24-.84-.76-.84-1.35zm13.76-5.38l-6.05 6.05 8.76 5.88c.5.24 1.08.11 1.46-.27.38-.38.51-.96.27-1.46l-5.44-9.2zm1.4-1.4l5.44 9.2c.24.5.11 1.08-.27 1.46-.38.38-.96.51-1.46.27l-8.76-5.88 6.05-6.05zm-1.4-6.82l-6.05 6.05 8.76-5.88c.5-.24 1.08-.11 1.46.27.38.38.51.96.27 1.46l-5.44 9.2zm-8.22-4.68l6.05 6.05-8.76 5.88c-.5.24-1.08.11-1.46-.27-.38-.38-.51-.96-.27-1.46l5.44-9.2z" />
-            </svg>
+            <img src={googlePlayIcon} alt="Play Store" className="w-10 h-10 object-contain flex-shrink-0" />
             <div className="text-left">
               <span className="block text-xs font-medium opacity-90">Get it on</span>
-              <span className="block text-lg font-semibold">Google Play</span>
+              <span className="block text-lg font-semibold">Play Store</span>
             </div>
           </motion.a>
         </motion.div>

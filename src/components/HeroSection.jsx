@@ -1,102 +1,180 @@
-import { useRef } from 'react'
-import { motion, useScroll, useTransform } from 'framer-motion'
-import tripImg from '../assets/trip.jpg'
+import { useEffect, useRef, useState } from 'react'
+import { useScroll, useTransform, motion, useSpring } from 'framer-motion'
+import guideme42icon from '../assets/guideme42icon.png'
+
+const TOTAL_FRAMES = 240
+
+function padZeros(num, places) {
+  return String(num).padStart(places, '0')
+}
 
 export default function HeroSection() {
-  const sectionRef = useRef(null)
+  const containerRef = useRef(null)
+  const canvasRef = useRef(null)
+
+  const [loadedImages, setLoadedImages] = useState(0)
+  const imagesRef = useRef([])
+  const currentFrameDrawn = useRef(-1)
+
+  useEffect(() => {
+    const preloadImages = async () => {
+      for (let i = 1; i <= TOTAL_FRAMES; i++) {
+        await new Promise((resolve) => {
+          const img = new Image()
+          img.src = `/guideme42_sequence/${padZeros(i, 5)}.jpg`
+          img.onload = () => {
+            imagesRef.current[i] = img
+            setLoadedImages((c) => c + 1)
+            resolve()
+          }
+          img.onerror = () => resolve()
+        })
+      }
+    }
+    preloadImages()
+  }, [])
 
   const { scrollYProgress } = useScroll({
-    target: sectionRef,
-    offset: ['start end', 'end start'],
+    target: containerRef,
+    offset: ['start start', 'end end'],
   })
-  const backgroundY = useTransform(scrollYProgress, [0, 0.5, 1], ['0%', '20%', '0%'])
+  const smoothProgress = useSpring(scrollYProgress, { damping: 40, stiffness: 200, mass: 0.2 })
+  const frameIndex = useTransform(smoothProgress, [0, 1], [1, TOTAL_FRAMES])
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    const ctx = canvas?.getContext('2d', { alpha: false })
+    if (!canvas || !ctx) return
+
+    let animationFrameId
+    const render = () => {
+      let targetFrame = Math.round(frameIndex.get())
+      targetFrame = Math.max(1, Math.min(TOTAL_FRAMES, targetFrame))
+
+      if (imagesRef.current[targetFrame] && currentFrameDrawn.current !== targetFrame) {
+        const img = imagesRef.current[targetFrame]
+        let width = canvas.clientWidth || 0
+        let height = canvas.clientHeight || 0
+        if (width <= 0 || height <= 0) {
+          width = window.innerWidth || 300
+          height = window.innerHeight || 500
+        }
+        const dpr = window.devicePixelRatio || 1
+        const isMobile = window.innerWidth < 768
+        const renderScale = isMobile ? 0.75 : 1
+        const effectiveDpr = isMobile ? Math.min(dpr, 1.5) * renderScale : dpr
+        const bufferWidth = Math.round(width * effectiveDpr)
+        const bufferHeight = Math.round(height * effectiveDpr)
+        if (canvas.width !== bufferWidth || canvas.height !== bufferHeight) {
+          canvas.width = bufferWidth
+          canvas.height = bufferHeight
+        }
+        ctx.setTransform(effectiveDpr, 0, 0, effectiveDpr, 0, 0)
+        const sizeFactor = isMobile ? 0.55 : 1
+        const targetW = width * sizeFactor
+        const targetH = height * sizeFactor
+        const imgScale = Math.max(targetW / img.width, targetH / img.height)
+        const drawWidth = img.width * imgScale
+        const drawHeight = img.height * imgScale
+        const dx = (width - drawWidth) / 2
+        const dy = (height - drawHeight) / 2
+        ctx.fillStyle = '#E8ECEC'
+        ctx.fillRect(0, 0, width, height)
+        ctx.drawImage(img, dx, dy, drawWidth, drawHeight)
+        currentFrameDrawn.current = targetFrame
+      }
+      animationFrameId = requestAnimationFrame(render)
+    }
+    render()
+    const initialDrawTimer = setInterval(() => {
+      if (imagesRef.current[1] && currentFrameDrawn.current === -1) {
+        frameIndex.set(1)
+        clearInterval(initialDrawTimer)
+      }
+    }, 100)
+    return () => {
+      cancelAnimationFrame(animationFrameId)
+      clearInterval(initialDrawTimer)
+    }
+  }, [frameIndex])
+
+  useEffect(() => {
+    const invalidate = () => { currentFrameDrawn.current = -1 }
+    window.addEventListener('resize', invalidate)
+    const el = containerRef.current
+    if (el) {
+      const ro = new ResizeObserver(invalidate)
+      ro.observe(el)
+      return () => {
+        window.removeEventListener('resize', invalidate)
+        ro.disconnect()
+      }
+    }
+    return () => window.removeEventListener('resize', invalidate)
+  }, [])
+
+  const opacity0 = useTransform(smoothProgress, [0, 0.05, 0.1], [1, 1, 0])
+  const y0 = useTransform(smoothProgress, [0, 0.05], [0, -20])
+  const opacity1 = useTransform(smoothProgress, [0.15, 0.25, 0.35], [0, 1, 0])
+  const y1 = useTransform(smoothProgress, [0.15, 0.25], [20, 0])
+  const opacity2 = useTransform(smoothProgress, [0.5, 0.6, 0.7], [0, 1, 0])
+  const y2 = useTransform(smoothProgress, [0.5, 0.6], [20, 0])
+  const opacity3 = useTransform(smoothProgress, [0.8, 0.9, 1], [0, 1, 1])
+  const y3 = useTransform(smoothProgress, [0.8, 0.9], [20, 0])
+  const progressPercent = Math.round((loadedImages / TOTAL_FRAMES) * 100)
 
   return (
-    <section ref={sectionRef} className="relative min-h-screen flex items-center pt-20 pb-16 px-6 overflow-hidden">
-      {/* Parallax background */}
-      <motion.div
-        style={{ y: backgroundY }}
-        className="absolute inset-0 -top-[25%] -bottom-[25%] min-h-[150%] w-full overflow-hidden"
-      >
-        <img
-          src={tripImg}
-          alt=""
-          className="absolute inset-0 w-full h-full min-w-full min-h-full object-cover object-center"
+    <div ref={containerRef} id="hero" className="relative w-full h-[350vh] md:h-[500vh] bg-[#E8ECEC] font-sans">
+      <div className="sticky top-0 left-0 right-0 w-full min-h-screen h-[100dvh] sm:h-screen overflow-hidden">
+        <canvas
+          ref={canvasRef}
+          className="absolute top-0 left-0 w-full h-full z-0"
+          style={{ width: '100%', height: '100%', display: 'block' }}
         />
-      </motion.div>
-      {/* Dark transparent overlay */}
-      <div className="absolute inset-0 bg-black/25" />
-
-      <div className="relative z-10 max-w-6xl mx-auto w-full flex flex-col items-center justify-center text-center">
-        <div className="flex-1">
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="text-[#059669] font-medium tracking-widest uppercase text-sm mb-4"
-          >
-            Smarter Trips Start Here
-          </motion.p>
-          <motion.h1
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="text-5xl md:text-6xl lg:text-7xl font-semibold tracking-tight text-[var(--color-text-primary)] mb-4"
-          >
-            GuideMe42
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="text-lg md:text-xl text-[var(--color-text-secondary)] mb-8 max-w-lg mx-auto"
-          >
-            Plan trips, discover places, add trip members, split costs, and share guides—all in one app.
-          </motion.p>
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="flex flex-wrap gap-4 justify-center"
-          >
-            <motion.a
-              href="#download"
-              className="px-8 py-4 rounded-full bg-[#059669] text-white font-semibold hover:bg-[#047857] transition-colors"
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              Download App
-            </motion.a>
-            <motion.a
-              href="#features"
-              className="px-8 py-4 rounded-full border-2 border-[var(--color-border)] text-[var(--color-text-primary)] font-medium hover:border-[#059669] hover:text-[#059669] transition-colors"
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              Explore Features
-            </motion.a>
+        {loadedImages < Math.min(60, TOTAL_FRAMES) && (
+          <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-[#E8ECEC]">
+            <div className="w-16 h-16 border-4 border-black/10 border-t-black/80 rounded-full animate-spin mb-4" />
+            <p className="text-black/60 font-medium tracking-wide">Loading GuideMe42 experience... {progressPercent}%</p>
+          </div>
+        )}
+        <div className="absolute inset-0 pointer-events-none z-10 px-6 max-w-7xl mx-auto w-full">
+          <motion.div style={{ opacity: opacity0, y: y0 }} className="absolute inset-0 flex flex-col items-start justify-start pt-[12vh] sm:pt-[20vh] pl-3 pr-4 sm:pl-4 md:pl-4 md:-ml-16">
+            <div className="relative sm:-ml-4 -mt-2 pr-4 sm:pr-8 pt-4 sm:pt-6 pb-4 sm:pb-6 pl-4 sm:pl-6 rounded-xl sm:rounded-2xl bg-white/20 backdrop-blur-md border-l-4 border-[#059669] shadow-[0_8px_32px_rgba(0,0,0,0.08)] max-w-[95vw]">
+              <h1 className="text-3xl sm:text-5xl md:text-7xl lg:text-8xl font-sans text-left tracking-tight mb-2 sm:mb-4 flex items-center gap-2 sm:gap-3" style={{ fontFamily: 'Poppins, sans-serif', textShadow: '0 2px 20px rgba(0,0,0,0.08)' }}>
+                <img src={guideme42icon} alt="" className="h-8 w-8 sm:h-12 sm:w-12 md:h-16 md:w-16 lg:h-20 lg:w-20 object-cover rounded-full shrink-0" />
+                <span><span className="text-black font-semibold">GuideMe</span><span className="text-[#059669] font-semibold">42</span></span>
+              </h1>
+              <p className="text-base sm:text-xl md:text-2xl text-black/70 font-medium tracking-wide text-left max-w-md" style={{ letterSpacing: '0.02em' }}>Plot your path. Pack your bags. Go.</p>
+            </div>
+          </motion.div>
+          <motion.div style={{ opacity: opacity1, y: y1 }} className="absolute inset-0 flex flex-col items-start justify-center pl-3 pr-4 sm:pl-4 md:pl-4 md:-ml-16 w-full md:w-1/2">
+            <div className="relative sm:-ml-4 pr-4 sm:pr-8 pt-4 sm:pt-6 pb-4 sm:pb-6 pl-4 sm:pl-6 rounded-xl sm:rounded-2xl bg-white/20 backdrop-blur-md border-l-4 border-[#059669] shadow-[0_8px_32px_rgba(0,0,0,0.08)] max-w-[95vw]">
+              <h2 className="text-2xl sm:text-4xl md:text-6xl lg:text-7xl font-sans font-semibold tracking-tight text-black mb-3 sm:mb-5" style={{ fontFamily: 'Poppins, sans-serif', textShadow: '0 2px 24px rgba(0,0,0,0.06)' }}>Your Trip<br/>Begins Here</h2>
+              <p className="text-base sm:text-lg md:text-xl text-black/70 font-medium leading-relaxed max-w-sm" style={{ letterSpacing: '0.015em' }}>Dream it. Map it. Live it.</p>
+            </div>
+          </motion.div>
+          <motion.div style={{ opacity: opacity2, y: y2 }} className="absolute inset-0 flex flex-col items-start justify-start pt-[12vh] sm:pt-[20vh] pl-3 pr-4 sm:pl-4 md:pl-4 md:-ml-16 w-full md:w-1/2">
+            <div className="relative sm:-ml-4 pr-4 sm:pr-8 pt-4 sm:pt-6 pb-4 sm:pb-6 pl-4 sm:pl-6 rounded-xl sm:rounded-2xl bg-white/20 backdrop-blur-md border-l-4 border-[#059669] shadow-[0_8px_32px_rgba(0,0,0,0.08)] max-w-[95vw]">
+              <h2 className="text-2xl sm:text-4xl md:text-6xl lg:text-7xl font-sans font-semibold tracking-tight text-black mb-3 sm:mb-5 text-left" style={{ fontFamily: 'Poppins, sans-serif', textShadow: '0 2px 24px rgba(0,0,0,0.06)' }}>Build your own itinerary</h2>
+              <p className="text-base sm:text-lg md:text-xl text-black/70 font-medium leading-relaxed max-w-[400px] text-left" style={{ letterSpacing: '0.015em' }}>Day by day, your perfect trip unfolds.</p>
+            </div>
+          </motion.div>
+          <motion.div style={{ opacity: opacity3, y: y3 }} className="absolute inset-0 flex flex-col items-start justify-end pb-6 sm:pb-8 md:pb-12 pl-3 pr-4 sm:pl-4 md:pl-4 md:-ml-16 w-full md:w-1/2">
+            <div className="relative sm:-ml-4 pr-4 sm:pr-8 pt-4 sm:pt-6 pb-4 sm:pb-6 pl-4 sm:pl-6 rounded-xl sm:rounded-2xl bg-white/20 backdrop-blur-md border-l-4 border-[#059669] shadow-[0_8px_32px_rgba(0,0,0,0.08)] max-w-[95vw]">
+              <h2 className="text-2xl sm:text-4xl md:text-6xl lg:text-7xl font-sans font-semibold tracking-tight text-black mb-3 sm:mb-4 text-left" style={{ fontFamily: 'Poppins, sans-serif', textShadow: '0 2px 24px rgba(0,0,0,0.06)' }}>Your Adventure Awaits</h2>
+              <p className="text-base sm:text-lg md:text-xl text-black/70 font-medium text-left mb-6 sm:mb-10" style={{ letterSpacing: '0.015em' }}>Your next adventure starts with one tap.</p>
+              <div className="pointer-events-auto">
+                <a href="#download" className="inline-flex items-center gap-2 sm:gap-3 px-6 sm:px-10 py-4 sm:py-5 text-sm sm:text-base bg-black text-white rounded-full font-medium tracking-wide hover:bg-emerald-700 hover:scale-105 active:scale-95 transition-all duration-300 shadow-xl shadow-black/10 group">
+                  <span>Start Planning</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                  </svg>
+                </a>
+              </div>
+            </div>
           </motion.div>
         </div>
       </div>
-
-      {/* Scroll indicator */}
-      <motion.div
-        className="absolute bottom-8 left-1/2 -translate-x-1/2"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1 }}
-      >
-        <motion.div
-          className="flex flex-col items-center gap-2"
-          animate={{ y: [0, 8, 0] }}
-          transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
-        >
-          <span className="text-xs text-[var(--color-text-muted)]">Scroll</span>
-          <svg className="w-6 h-6 text-[var(--color-text-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-          </svg>
-        </motion.div>
-      </motion.div>
-    </section>
+    </div>
   )
 }

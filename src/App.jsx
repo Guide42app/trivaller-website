@@ -1,24 +1,18 @@
-import React from 'react';
-import Nav from './components/Nav';
-import TravelScroll from './components/TravelScroll';
-import HeroSection from './components/HeroSection';
-import FeatureSection from './components/FeatureSection';
-import DownloadSection from './components/DownloadSection';
-import Footer from './components/Footer';
+import { Routes, Route } from 'react-router-dom'
+import HomePage from './pages/HomePage'
+import PrivacyPolicy from './pages/PrivacyPolicy'
+import TermsAndConditions from './pages/TermsAndConditions'
+import Support from './pages/Support'
 
 function App() {
   return (
-    <div className="min-h-screen text-black">
-      <Nav />
-      <section id="features">
-        <TravelScroll />
-      </section>
-      <HeroSection />
-      <FeatureSection />
-      <DownloadSection />
-      <Footer />
-    </div>
-  );
+    <Routes>
+      <Route path="/" element={<HomePage />} />
+      <Route path="/privacy" element={<PrivacyPolicy />} />
+      <Route path="/terms" element={<TermsAndConditions />} />
+      <Route path="/support" element={<Support />} />
+    </Routes>
+  )
 }
 
-export default App;
+export default App
