@@ -9,6 +9,41 @@ function padZeros(num, places) {
   return String(num).padStart(places, '0')
 }
 
+function Cloud({ className = '' }) {
+  return (
+    <svg
+      viewBox="0 0 160 70"
+      className={`flex-shrink-0 ${className}`}
+      style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.06))' }}
+      aria-hidden
+    >
+      <defs>
+        <linearGradient id="cloudGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="rgba(255,255,255,0.98)" />
+          <stop offset="70%" stopColor="rgba(255,255,255,0.9)" />
+          <stop offset="100%" stopColor="rgba(248,250,252,0.82)" />
+        </linearGradient>
+      </defs>
+      <g fill="url(#cloudGrad)">
+        {/* Base puffs - layered for a cumulus look */}
+        <ellipse cx="45" cy="48" rx="28" ry="14" />
+        <ellipse cx="82" cy="45" rx="35" ry="16" />
+        <ellipse cx="118" cy="48" rx="26" ry="13" />
+        {/* Middle layer */}
+        <ellipse cx="65" cy="38" rx="32" ry="15" />
+        <ellipse cx="95" cy="42" rx="24" ry="12" />
+        {/* Top puffs */}
+        <ellipse cx="52" cy="28" rx="22" ry="12" />
+        <ellipse cx="78" cy="25" rx="28" ry="14" />
+        <ellipse cx="105" cy="30" rx="20" ry="10" />
+        {/* Small accent puffs */}
+        <ellipse cx="38" cy="42" rx="14" ry="8" />
+        <ellipse cx="125" cy="40" rx="12" ry="7" />
+      </g>
+    </svg>
+  )
+}
+
 export default function HeroSection() {
   const containerRef = useRef(null)
   const canvasRef = useRef(null)
@@ -141,6 +176,60 @@ export default function HeroSection() {
           className="absolute top-0 left-0 w-full h-full z-0"
           style={{ width: '100%', height: '100%', display: 'block' }}
         />
+        {/* Looping cloud layer */}
+        <div className="absolute inset-0 z-[1] pointer-events-none overflow-hidden opacity-80">
+          <motion.div
+            className="absolute top-[15%] left-0 h-[120px] flex"
+            style={{ width: '200%' }}
+            animate={{ x: [0, '-50%'] }}
+            transition={{ duration: 45, repeat: Infinity, ease: 'linear' }}
+          >
+            <div className="flex shrink-0 items-end gap-[15%] w-1/2">
+              <Cloud className="w-32 h-12 sm:w-40 sm:h-14" />
+              <Cloud className="w-24 h-10 sm:w-28 sm:h-11" />
+              <Cloud className="w-40 h-14 sm:w-52 sm:h-16" />
+              <Cloud className="w-28 h-11 sm:w-36 sm:h-12" />
+            </div>
+            <div className="flex shrink-0 items-end gap-[15%] w-1/2">
+              <Cloud className="w-32 h-12 sm:w-40 sm:h-14" />
+              <Cloud className="w-24 h-10 sm:w-28 sm:h-11" />
+              <Cloud className="w-40 h-14 sm:w-52 sm:h-16" />
+              <Cloud className="w-28 h-11 sm:w-36 sm:h-12" />
+            </div>
+          </motion.div>
+          <motion.div
+            className="absolute top-[25%] left-0 h-[100px] flex"
+            style={{ width: '200%' }}
+            animate={{ x: ['-50%', 0] }}
+            transition={{ duration: 55, repeat: Infinity, ease: 'linear' }}
+          >
+            <div className="flex shrink-0 items-end gap-[20%] w-1/2">
+              <Cloud className="w-28 h-10 sm:w-36 sm:h-12" />
+              <Cloud className="w-36 h-12 sm:w-44 sm:h-14" />
+              <Cloud className="w-20 h-8 sm:w-24 sm:h-9" />
+            </div>
+            <div className="flex shrink-0 items-end gap-[20%] w-1/2">
+              <Cloud className="w-28 h-10 sm:w-36 sm:h-12" />
+              <Cloud className="w-36 h-12 sm:w-44 sm:h-14" />
+              <Cloud className="w-20 h-8 sm:w-24 sm:h-9" />
+            </div>
+          </motion.div>
+          <motion.div
+            className="absolute top-[8%] left-0 h-[80px] flex"
+            style={{ width: '200%' }}
+            animate={{ x: [0, '-50%'] }}
+            transition={{ duration: 60, repeat: Infinity, ease: 'linear' }}
+          >
+            <div className="flex shrink-0 items-end gap-[25%] w-1/2">
+              <Cloud className="w-24 h-9 sm:w-28 sm:h-10" />
+              <Cloud className="w-36 h-12 sm:w-44 sm:h-14" />
+            </div>
+            <div className="flex shrink-0 items-end gap-[25%] w-1/2">
+              <Cloud className="w-24 h-9 sm:w-28 sm:h-10" />
+              <Cloud className="w-36 h-12 sm:w-44 sm:h-14" />
+            </div>
+          </motion.div>
+        </div>
         {loadedImages < MIN_FRAMES_TO_SHOW && (
           <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-[#E8ECEC]">
             <div className="w-16 h-16 border-4 border-black/10 border-t-black/80 rounded-full animate-spin mb-4" />
