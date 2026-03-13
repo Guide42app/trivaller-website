@@ -3,20 +3,20 @@ import tripImg from '../assets/trip.jpg'
 
 export default function AboutSection() {
   return (
-    <section id="about" className="relative min-h-[100dvh] sm:min-h-screen w-full max-w-full overflow-x-hidden flex items-center pt-20 pb-16 px-4 sm:px-6">
-      {/* Background - absolute on mobile (responsive), fixed on desktop */}
-      <div
-        className="absolute inset-0 w-full min-w-0 h-full sm:fixed sm:inset-0 sm:-z-10 pointer-events-none"
-        style={{
-          backgroundImage: `url(${tripImg})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat',
-        }}
-        aria-hidden
-      />
-      {/* Dark overlay */}
-      <div className="absolute inset-0 bg-black/25 pointer-events-none sm:fixed sm:inset-0 sm:-z-[5]" aria-hidden />
+    <section
+  id="about"
+  className="relative min-h-screen w-full overflow-hidden flex items-center pt-20 pb-16 px-4 sm:px-6"
+>
+  {/* Background */}
+  <div
+    className="absolute inset-0 -z-10 bg-cover bg-center"
+    style={{
+      backgroundImage: `url(${tripImg})`,
+    }}
+  />
+
+  {/* Overlay */}
+  <div className="absolute inset-0 -z-[5] bg-black/30" />
 
       <div className="relative z-10 max-w-6xl mx-auto w-full flex flex-col items-center justify-center text-center">
         <div className="flex-1">

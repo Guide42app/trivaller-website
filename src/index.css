@@ -53,3 +53,17 @@
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+/* About section parallax background - full viewport on all devices including mobile */
+.about-parallax-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  height: 100dvh;
+  min-height: 100vh;
+  min-height: -webkit-fill-available; /* iOS Safari visible viewport */
+}

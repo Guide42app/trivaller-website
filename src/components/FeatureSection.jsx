@@ -172,13 +172,13 @@ function PhoneFrame({ img, alt = 'Feature preview' }) {
 
 function FeatureSlide({ feature, isActive }) {
   return (
-    <div className="w-full min-w-full flex flex-col md:flex-row gap-8 md:gap-12 items-center justify-center px-3 sm:px-4 md:px-12 py-8 md:py-12">
+    <div className="w-full min-w-full flex flex-col md:flex-row gap-6 sm:gap-8 md:gap-12 items-center justify-center px-3 sm:px-4 md:px-12 py-6 sm:py-8 md:py-12">
       <PhoneFrame img={feature.img} alt={feature.title} />
       <motion.div
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: isActive ? 1 : 0.7, x: 0 }}
         transition={{ duration: 0.4 }}
-        className="w-full min-w-0 max-w-lg"
+        className="w-full min-w-0 max-w-lg px-1"
       >
         <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-white/95 backdrop-blur-sm p-4 sm:p-6 md:p-8 lg:p-10 shadow-xl shadow-black/5 border border-[var(--color-border)] text-center md:text-left hover:shadow-2xl hover:shadow-[#059669]/10 hover:border-[#059669]/30 transition-all duration-300">
           {/* Accent line */}
@@ -190,11 +190,11 @@ function FeatureSlide({ feature, isActive }) {
             >
               {feature.icon}
             </motion.div>
-            <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-[var(--color-text-primary)] tracking-tight min-w-0">
+            <h3 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-[var(--color-text-primary)] tracking-tight break-words">
               {feature.title}
             </h3>
           </div>
-          <p className="text-sm sm:text-base md:text-lg text-[var(--color-text-secondary)] leading-[1.7] font-medium">
+          <p className="text-sm sm:text-base md:text-lg text-[var(--color-text-secondary)] leading-[1.7] font-medium break-words">
             {feature.description}
           </p>
         </div>
@@ -279,7 +279,7 @@ const FeatureSection = forwardRef(function FeatureSection(_, ref) {
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {features.map((feature, index) => (
-            <div key={feature.title} className="min-w-full snap-center flex-shrink-0">
+            <div key={feature.title} className="w-full min-w-full flex-shrink-0 snap-center">
               <FeatureSlide feature={feature} isActive={activeIndex === index} />
             </div>
           ))}
