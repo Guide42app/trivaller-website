@@ -21,7 +21,7 @@ export default function DownloadSection() {
           transition={{ duration: 0.5, delay: 0.1 }}
           className="text-lg text-[var(--color-text-secondary)] mb-12"
         >
-          Available on iOS and Android
+          Coming soon on Android and iOS
         </motion.p>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
