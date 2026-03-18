@@ -2,8 +2,8 @@
 
 /* GuideMe42 app theme – light mode */
 @theme {
-  --font-display: "Poppins", system-ui, sans-serif;
-  --font-sans: "Poppins", system-ui, sans-serif;
+  --font-display: "Exo 2", system-ui, sans-serif;
+  --font-sans: "Exo 2", system-ui, sans-serif;
   /* Primary green – app accent (#059669) */
   --color-primary: #059669;
   --color-primary-light: #10b981;
