@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* GuideMe42 app theme – light mode */
+/* Trivaller app theme – light mode */
 @theme {
   --font-display: "Exo 2", system-ui, sans-serif;
   --font-sans: "Exo 2", system-ui, sans-serif;

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useScroll, useTransform, motion, useSpring } from 'framer-motion'
-import guideme42icon from '../assets/guideme42icon.png'
+import trivallerIcon from '../assets/trivallericon.png'
 import appScreenImg from '../assets/features/f1.PNG'
 
 const TOTAL_FRAMES = 240
@@ -23,7 +23,7 @@ export default function HeroSection() {
     const loadFrame = (i) =>
       new Promise((resolve) => {
         const img = new Image()
-        img.src = `/guideme42_sequence/${padZeros(i, 5)}.jpg`
+        img.src = `/trivaller_sequence/${padZeros(i, 5)}.jpg`
         img.onload = () => {
           imagesRef.current[i] = img
           setLoadedImages((c) => c + 1)
@@ -135,21 +135,21 @@ export default function HeroSection() {
         {loadedImages < MIN_FRAMES_TO_SHOW && (
           <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-[#E8ECEC]">
             <div className="w-16 h-16 border-4 border-black/10 border-t-black/80 rounded-full animate-spin mb-4" />
-            <p className="text-black/60 font-medium tracking-wide">Loading GuideMe42 experience... {progressPercent}%</p>
+            <p className="text-black/60 font-medium tracking-wide">Loading Trivaller experience... {progressPercent}%</p>
           </div>
         )}
         <div className="absolute inset-0 pointer-events-none z-10 px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 min-w-0 max-w-7xl mx-auto w-full">
-          {/* GuideMe42 text + iPhone frame: same animation, disappear together */}
+          {/* Trivaller text + iPhone frame: same animation, disappear together */}
           <motion.div style={{ opacity: opacity0, y: y0 }} className="absolute inset-0 flex flex-col items-start justify-start pt-[10vh] sm:pt-[14vh] md:pt-[16vh] lg:pt-[18vh] xl:pt-[20vh] pl-2 pr-3 sm:pl-4 md:pl-6 md:pr-6 lg:pl-10 lg:pr-8 xl:pl-12 xl:-ml-8 2xl:-ml-16">
             <div className="relative -mt-2 sm:-ml-4 pr-3 sm:pr-6 md:pr-8 pt-3 sm:pt-5 md:pt-6 pb-3 sm:pb-5 md:pb-6 pl-3 sm:pl-5 md:pl-6 rounded-xl sm:rounded-2xl bg-white/20 backdrop-blur-md border-l-4 border-[#059669] shadow-[0_8px_32px_rgba(0,0,0,0.08)] max-w-[95vw] md:max-w-[85vw] lg:max-w-2xl xl:max-w-3xl 2xl:max-w-4xl">
               <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl 2xl:text-8xl font-sans text-left tracking-tight mb-2 sm:mb-3 md:mb-4 flex items-center gap-2 sm:gap-3 flex-wrap" style={{ fontFamily: 'Poppins, sans-serif', textShadow: '0 2px 20px rgba(0,0,0,0.08)' }}>
-                <img src={guideme42icon} alt="" className="h-8 w-8 sm:h-11 sm:w-11 md:h-14 md:w-14 lg:h-16 lg:w-16 xl:h-20 xl:w-20 object-cover rounded-full shrink-0" />
-                <span><span className="text-black font-semibold">GuideMe</span><span className="text-[#059669] font-semibold">42</span></span>
+                <img src={trivallerIcon} alt="" className="h-8 w-8 sm:h-11 sm:w-11 md:h-14 md:w-14 lg:h-16 lg:w-16 xl:h-20 xl:w-20 object-cover rounded-full shrink-0" />
+                <span className="text-black font-semibold">Trivaller</span>
               </h1>
               <p className="text-base sm:text-lg md:text-xl lg:text-xl xl:text-2xl text-black/70 font-medium tracking-wide text-left max-w-md md:max-w-lg lg:max-w-xl" style={{ letterSpacing: '0.02em' }}>Plot your path. Pack your bags. Go.</p>
             </div>
           </motion.div>
-          {/* iPhone frame – right on sm+, below title on mobile; disappears with GuideMe42 text (opacity0, y0) */}
+          {/* iPhone frame – right on sm+, below title on mobile; disappears with Trivaller text (opacity0, y0) */}
           <motion.div
             style={{ opacity: opacity0, y: y0 }}
             className="absolute right-2 top-[34vh] w-[180px] max-w-[50vw] sm:right-6 sm:top-1/2 sm:-translate-y-1/2 sm:max-w-none sm:w-[200px] md:right-8 md:w-[260px] lg:right-10 lg:w-[300px] xl:right-14 xl:w-[340px] 2xl:right-16 2xl:w-[380px] z-10"

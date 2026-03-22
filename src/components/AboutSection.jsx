@@ -35,16 +35,16 @@ export default function AboutSection() {
             className="max-w-6xl w-full mx-auto mb-10 text-left px-2"
           >
             <h2 className="text-2xl md:text-4xl font-bold mb-4 text-center">
-              <span className="text-white">About GuideMe</span><span className="text-[#059669]">42</span>
+              <span className="text-white">About Trivaller</span>
             </h2>
             <p className="text-base md:text-lg text-white/90 leading-relaxed mb-4">
-              GuideMe42 was created to make travel planning simple, collaborative, and enjoyable. We believe every trip should begin with excitement—not stress. From choosing destinations to organizing itineraries, traveling should feel effortless.
+              Trivaller was created to make travel planning simple, collaborative, and enjoyable. We believe every trip should begin with excitement—not stress. From choosing destinations to organizing itineraries, traveling should feel effortless.
             </p>
             <p className="text-base md:text-lg text-white/90 leading-relaxed mb-4">
-              Our app helps travelers discover places, plan trips, invite friends, split expenses, and share travel guides—all in one place. Whether you're planning a weekend getaway, a road trip, or an international adventure, GuideMe42 keeps everything organized so you can focus on the experience.
+              Our app helps travelers discover places, plan trips, invite friends, split expenses, and share travel guides—all in one place. Whether you're planning a weekend getaway, a road trip, or an international adventure, Trivaller keeps everything organized so you can focus on the experience.
             </p>
             <p className="text-base md:text-lg text-white/90 leading-relaxed">
-              We built GuideMe42 for explorers, dreamers, and planners who want smarter tools to turn travel ideas into real adventures.
+              We built Trivaller for explorers, dreamers, and planners who want smarter tools to turn travel ideas into real adventures.
             </p>
           </motion.div>
 

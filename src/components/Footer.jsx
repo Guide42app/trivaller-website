@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import guideme42icon from '../assets/guideme42icon.png'
+import trivallerIcon from '../assets/trivallericon.png'
 import googlePlayIcon from '../assets/google-play-store-icon.webp'
 
 const productLinks = [
@@ -33,14 +33,11 @@ export default function Footer() {
           <div className="lg:col-span-5">
             <Link to="/" className="inline-flex items-center gap-3 mb-6">
               <img
-                src={guideme42icon}
-                alt="GuideMe42"
+                src={trivallerIcon}
+                alt="Trivaller"
                 className="h-12 w-12 object-cover rounded-full ring-2 ring-white/10"
               />
-              <span className="text-2xl font-semibold tracking-tight">
-                <span className="text-white">GuideMe</span>
-                <span className="text-[#10b981]">42</span>
-              </span>
+              <span className="text-2xl font-semibold tracking-tight text-white">Trivaller</span>
             </Link>
             <p className="text-zinc-400 text-lg max-w-sm leading-relaxed mb-8">
               Plan trips, discover places, split costs, and share guides—all in one app.
@@ -131,7 +128,7 @@ export default function Footer() {
         {/* Bottom bar */}
         <div className="mt-16 pt-8 border-t border-zinc-800 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-zinc-500 text-sm">
-            &copy; {new Date().getFullYear()} GuideMe42. All rights reserved.
+            &copy; {new Date().getFullYear()} Trivaller. All rights reserved.
           </p>
           <div className="flex items-center gap-6 text-sm">
             <Link to="/support" className="text-zinc-500 hover:text-zinc-300 transition-colors">Support</Link>

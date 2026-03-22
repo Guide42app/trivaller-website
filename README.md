@@ -1,6 +1,6 @@
-# website-guideme42
+# website-trivaller
 
-Marketing website for GuideMe42 – the travel planning app.
+Marketing website for Trivaller – the travel planning app.
 
 ## Tech stack
 

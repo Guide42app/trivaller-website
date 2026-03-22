@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import guideme42icon from '../assets/guideme42icon.png'
+import trivallerIcon from '../assets/trivallericon.png'
 
 export default function Support() {
   return (
@@ -7,11 +7,8 @@ export default function Support() {
       <header className="border-b border-[var(--color-border)]">
         <div className="max-w-3xl mx-auto px-4 py-2 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
-            <img src={guideme42icon} alt="GuideMe42" className="h-7 w-7 object-cover rounded-full" />
-            <span className="text-lg font-semibold tracking-tight">
-              <span className="text-black">GuideMe</span>
-              <span className="text-[#059669]">42</span>
-            </span>
+            <img src={trivallerIcon} alt="Trivaller" className="h-7 w-7 object-cover rounded-full" />
+            <span className="text-lg font-semibold tracking-tight text-black">Trivaller</span>
           </Link>
           <Link
             to="/"
@@ -25,7 +22,7 @@ export default function Support() {
       <main className="max-w-3xl mx-auto px-4 py-6 md:py-8">
         <h1 className="text-2xl font-bold text-[var(--color-text-primary)] mb-1">Support</h1>
         <p className="text-sm text-[var(--color-text-secondary)] mb-5">
-          Get help with GuideMe42. We&apos;re here to assist you.
+          Get help with Trivaller. We&apos;re here to assist you.
         </p>
 
         <div className="space-y-4 text-sm text-[var(--color-text-primary)]">

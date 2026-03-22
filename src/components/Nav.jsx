@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, useScroll, useTransform } from 'framer-motion'
-import guideme42icon from '../assets/guideme42icon.png'
+import trivallerIcon from '../assets/trivallericon.png'
 
 const DOWNLOAD_HREF = '/#download'
 const DOWNLOAD_LABEL = 'Download app'
@@ -50,8 +50,8 @@ export default function Nav() {
       <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
         <motion.div style={{ opacity: logoOpacity }} className="flex shrink-0">
           <Link to="/" className="flex items-center gap-2">
-            <img src={guideme42icon} alt="GuideMe42" className="h-9 w-9 md:h-10 md:w-10 object-cover rounded-full" />
-            <span className="text-xl font-semibold tracking-tight"><span className="text-black">GuideMe</span><span className="text-[#059669]">42</span></span>
+            <img src={trivallerIcon} alt="Trivaller" className="h-9 w-9 md:h-10 md:w-10 object-cover rounded-full" />
+            <span className="text-xl font-semibold tracking-tight text-black">Trivaller</span>
           </Link>
         </motion.div>
         <a

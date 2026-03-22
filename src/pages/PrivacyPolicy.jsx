@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import guideme42icon from '../assets/guideme42icon.png'
+import trivallerIcon from '../assets/trivallericon.png'
 
 export default function PrivacyPolicy() {
   return (
@@ -7,11 +7,8 @@ export default function PrivacyPolicy() {
       <header className="border-b border-[var(--color-border)]">
         <div className="max-w-3xl mx-auto px-4 py-2 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
-            <img src={guideme42icon} alt="GuideMe42" className="h-7 w-7 object-cover rounded-full" />
-            <span className="text-lg font-semibold tracking-tight">
-              <span className="text-black">GuideMe</span>
-              <span className="text-[#059669]">42</span>
-            </span>
+            <img src={trivallerIcon} alt="Trivaller" className="h-7 w-7 object-cover rounded-full" />
+            <span className="text-lg font-semibold tracking-tight text-black">Trivaller</span>
           </Link>
           <Link
             to="/"
@@ -30,7 +27,7 @@ export default function PrivacyPolicy() {
           <section>
             <h2 className="text-base font-semibold mb-2 text-[var(--color-text-primary)]">1. Introduction</h2>
             <p className="text-[var(--color-text-secondary)] leading-snug">
-              GuideMe42 ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our travel planning application. Please read this policy carefully.
+              Trivaller ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our travel planning application. Please read this policy carefully.
             </p>
           </section>
 
@@ -82,7 +79,7 @@ export default function PrivacyPolicy() {
               We retain your information for as long as your account is active or as needed to provide the Services. After you delete your account, we delete or anonymize your personal data (such as your name, email, and profile) within a reasonable period, except where we must retain it for legal or safety reasons.
             </p>
             <p className="text-[var(--color-text-secondary)] leading-snug">
-              We may continue to keep place-related content that you contributed as a GuideMe42 user—such as place details, descriptions, photos, or ratings—in anonymized or non–personally linked form. We use this to recommend places to other users and to improve our Services. This content is no longer associated with your account or identity after deletion.
+              We may continue to keep place-related content that you contributed as a Trivaller user—such as place details, descriptions, photos, or ratings—in anonymized or non–personally linked form. We use this to recommend places to other users and to improve our Services. This content is no longer associated with your account or identity after deletion.
             </p>
           </section>
 

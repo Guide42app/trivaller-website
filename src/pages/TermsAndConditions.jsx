@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import guideme42icon from '../assets/guideme42icon.png'
+import trivallerIcon from '../assets/trivallericon.png'
 
 export default function TermsAndConditions() {
   return (
@@ -7,11 +7,8 @@ export default function TermsAndConditions() {
       <header className="border-b border-[var(--color-border)]">
         <div className="max-w-3xl mx-auto px-4 py-2 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
-            <img src={guideme42icon} alt="GuideMe42" className="h-7 w-7 object-cover rounded-full" />
-            <span className="text-lg font-semibold tracking-tight">
-              <span className="text-black">GuideMe</span>
-              <span className="text-[#059669]">42</span>
-            </span>
+            <img src={trivallerIcon} alt="Trivaller" className="h-7 w-7 object-cover rounded-full" />
+            <span className="text-lg font-semibold tracking-tight text-black">Trivaller</span>
           </Link>
           <Link
             to="/"
@@ -30,21 +27,21 @@ export default function TermsAndConditions() {
           <section>
             <h2 className="text-base font-semibold mb-2 text-[var(--color-text-primary)]">1. Acceptance of Terms</h2>
             <p className="text-[var(--color-text-secondary)] leading-snug">
-              By accessing or using the GuideMe42 application and services ("Services"), you agree to be bound by these Terms and Conditions. If you do not agree to these terms, please do not use our Services.
+              By accessing or using the Trivaller application and services ("Services"), you agree to be bound by these Terms and Conditions. If you do not agree to these terms, please do not use our Services.
             </p>
           </section>
 
           <section>
             <h2 className="text-base font-semibold mb-2 text-[var(--color-text-primary)]">2. Description of Services</h2>
             <p className="text-[var(--color-text-secondary)] leading-snug">
-              GuideMe42 provides travel planning tools including itinerary creation, destination discovery, deals and offers from businesses, cost splitting, and collaboration features. We reserve the right to modify, suspend, or discontinue any part of our Services at any time.
+              Trivaller provides travel planning tools including itinerary creation, destination discovery, deals and offers from businesses, cost splitting, and collaboration features. We reserve the right to modify, suspend, or discontinue any part of our Services at any time.
             </p>
           </section>
 
           <section>
             <h2 className="text-base font-semibold mb-2 text-[var(--color-text-primary)]">3. Eligibility</h2>
             <p className="text-[var(--color-text-secondary)] leading-snug mb-2">
-              You must be at least 13 years of age (or the minimum age in your jurisdiction to consent to use of the Services) to use GuideMe42. If you are under 18, you should have your parent or guardian review these Terms. By using the Services, you represent that you meet these requirements.
+              You must be at least 13 years of age (or the minimum age in your jurisdiction to consent to use of the Services) to use Trivaller. If you are under 18, you should have your parent or guardian review these Terms. By using the Services, you represent that you meet these requirements.
             </p>
           </section>
 
@@ -78,7 +75,7 @@ export default function TermsAndConditions() {
           <section>
             <h2 className="text-base font-semibold mb-2 text-[var(--color-text-primary)]">6. Intellectual Property</h2>
             <p className="text-[var(--color-text-secondary)] leading-snug">
-              The GuideMe42 name, logo, and all related content are owned by us. You retain ownership of content you create. By posting content, you grant us a license to use, display, and share it as necessary to provide the Services.
+              The Trivaller name, logo, and all related content are owned by us. You retain ownership of content you create. By posting content, you grant us a license to use, display, and share it as necessary to provide the Services.
             </p>
           </section>
 
@@ -92,10 +89,10 @@ export default function TermsAndConditions() {
           <section>
             <h2 className="text-base font-semibold mb-2 text-[var(--color-text-primary)]">8. Deals and Third-Party Offers</h2>
             <p className="text-[var(--color-text-secondary)] leading-snug mb-2">
-              GuideMe42 may display deals, discounts, or offers from business owners (e.g. attractions, restaurants, hotels). These deals are created and described by the respective businesses. The applicability, terms, validity period, and redemption of each deal are determined solely by the business owner—not by GuideMe42.
+              Trivaller may display deals, discounts, or offers from business owners (e.g. attractions, restaurants, hotels). These deals are created and described by the respective businesses. The applicability, terms, validity period, and redemption of each deal are determined solely by the business owner—not by Trivaller.
             </p>
             <p className="text-[var(--color-text-secondary)] leading-snug">
-              We do not guarantee that a business will honor any deal as shown in the app. Users are responsible for verifying deal terms with the business before visiting or purchasing. GuideMe42 is not liable for any dispute, loss, or disappointment arising from a business&apos;s failure to apply a deal as described.
+              We do not guarantee that a business will honor any deal as shown in the app. Users are responsible for verifying deal terms with the business before visiting or purchasing. Trivaller is not liable for any dispute, loss, or disappointment arising from a business&apos;s failure to apply a deal as described.
             </p>
           </section>
 
@@ -116,7 +113,7 @@ export default function TermsAndConditions() {
           <section>
             <h2 className="text-base font-semibold mb-2 text-[var(--color-text-primary)]">11. Limitation of Liability</h2>
             <p className="text-[var(--color-text-secondary)] leading-snug">
-              To the maximum extent permitted by law, GuideMe42 shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of the Services.
+              To the maximum extent permitted by law, Trivaller shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of the Services.
             </p>
           </section>
 
@@ -130,7 +127,7 @@ export default function TermsAndConditions() {
           <section>
             <h2 className="text-base font-semibold mb-2 text-[var(--color-text-primary)]">13. Governing Law and Contact</h2>
             <p className="text-[var(--color-text-secondary)] leading-snug mb-2">
-              These Terms are governed by the laws of the jurisdiction in which GuideMe42 operates, without regard to conflict of law principles. Any disputes shall be resolved in the courts of that jurisdiction.
+              These Terms are governed by the laws of the jurisdiction in which Trivaller operates, without regard to conflict of law principles. Any disputes shall be resolved in the courts of that jurisdiction.
             </p>
             <p className="text-[var(--color-text-secondary)] leading-snug">
               For questions about these Terms, contact us at{' '}
