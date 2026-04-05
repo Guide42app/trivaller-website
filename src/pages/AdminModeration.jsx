@@ -11,11 +11,47 @@ function hostnameLooksLikeIpv4(urlString) {
   }
 }
 
-/** Same convention as the mobile app: base URL includes Spring’s /api context path. */
+/** Same-origin proxy on Vercel (see api/trivaller-backend/[...path].js + BACKEND_HTTP_ORIGIN). */
+const PROXY_API_BASE = '/api/trivaller-backend'
+
+/**
+ * On HTTPS production pages, if VITE_API_BASE_URL points at a public IPv4 (typical EC2 mistake:
+ * https://1.2.3.4:8080/api or http://1.2.3.4:8080/api), use the Vercel proxy instead so the
+ * browser never talks to the IP directly. Requires BACKEND_HTTP_ORIGIN on Vercel.
+ */
+function effectiveApiBaseForHttpsSite(fromEnv) {
+  const base = fromEnv.replace(/\/$/, '')
+  if (import.meta.env.VITE_DISABLE_IP_API_PROXY === 'true') {
+    return base
+  }
+  if (!import.meta.env.PROD || typeof window === 'undefined') {
+    return base
+  }
+  if (window.location.protocol !== 'https:') {
+    return base
+  }
+  try {
+    const u = new URL(base)
+    const host = u.hostname
+    const isPublicIpv4 = /^\d{1,3}(\.\d{1,3}){3}$/.test(host)
+    const isLoopback = host === 'localhost' || host === '127.0.0.1'
+    if (!isPublicIpv4 || isLoopback) {
+      return base
+    }
+    if (u.protocol === 'https:' || u.protocol === 'http:') {
+      return PROXY_API_BASE
+    }
+  } catch {
+    // keep base
+  }
+  return base
+}
+
+/** Same convention as the mobile app: base URL includes Spring’s /api context path (or proxy path). */
 function resolveApiBase() {
   const fromEnv = import.meta.env.VITE_API_BASE_URL?.trim()
   if (fromEnv) {
-    return fromEnv.replace(/\/$/, '')
+    return effectiveApiBaseForHttpsSite(fromEnv)
   }
   if (import.meta.env.DEV) {
     return 'http://localhost:8081/api'
@@ -32,6 +68,14 @@ function explainNetworkError(apiBase, err) {
   const apiHttp = apiBase.startsWith('http://')
   if (pageHttps && apiHttp) {
     return 'Your site uses HTTPS but VITE_API_BASE_URL is HTTP. Browsers block that. Use HTTPS on EC2 (nginx + Let’s Encrypt) and set VITE_API_BASE_URL to https://your-api-domain/api — or test admin from http://localhost only during dev.'
+  }
+  if (
+    pageHttps &&
+    apiBase === PROXY_API_BASE &&
+    err instanceof TypeError &&
+    String(err.message).includes('fetch')
+  ) {
+    return `Could not reach ${apiBase} (Vercel → EC2 proxy). In Vercel → Environment Variables add BACKEND_HTTP_ORIGIN=http://YOUR_EC2_IP:8080 (no /api), redeploy, and ensure EC2 security group allows inbound 8080 from the internet (or from Vercel if you lock it down).`
   }
   if (err instanceof TypeError && String(err.message).includes('fetch')) {
     const isLocalDev =
