@@ -14,12 +14,39 @@ function resolveApiBase() {
   return ''
 }
 
+/**
+ * Browsers block HTTPS pages from calling http:// APIs (mixed content) — shows as "Failed to fetch".
+ */
+function explainNetworkError(apiBase, err) {
+  const pageHttps =
+    typeof window !== 'undefined' && window.location.protocol === 'https:'
+  const apiHttp = apiBase.startsWith('http://')
+  if (pageHttps && apiHttp) {
+    return 'Your site uses HTTPS but VITE_API_BASE_URL is HTTP. Browsers block that. Use HTTPS on EC2 (nginx + Let’s Encrypt) and set VITE_API_BASE_URL to https://your-api-domain/api — or test admin from http://localhost only during dev.'
+  }
+  if (err instanceof TypeError && String(err.message).includes('fetch')) {
+    const isLocalDev =
+      import.meta.env.DEV &&
+      (apiBase.includes('localhost') || apiBase.includes('127.0.0.1'))
+    if (isLocalDev) {
+      return `Could not reach ${apiBase}. Start the backend on that host/port (e.g. ./gradlew bootRun — default is port 8081 in application.properties), or create trivaller-website/.env with VITE_API_BASE_URL=http://localhost:YOUR_PORT/api (same base as EXPO_PUBLIC_BACKEND_URL in the app). EC2 security groups only apply when the API is on EC2, not for localhost.`
+    }
+    return `Could not reach ${apiBase}. Check EC2 security group (inbound port), the URL/port, and that the backend allows CORS for this site.`
+  }
+  return err instanceof Error ? err.message : 'Request failed'
+}
+
 async function apiLogin(apiBase, email, password) {
-  const r = await fetch(`${apiBase}/auth/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password }),
-  })
+  let r
+  try {
+    r = await fetch(`${apiBase}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    })
+  } catch (err) {
+    throw new Error(explainNetworkError(apiBase, err))
+  }
   const data = await r.json().catch(() => ({}))
   if (!r.ok) {
     throw new Error(data.message || data.error || `Login failed (${r.status})`)
@@ -32,9 +59,14 @@ async function apiLogin(apiBase, email, password) {
 }
 
 async function apiPending(apiBase, token) {
-  const r = await fetch(`${apiBase}/admin/moderation/pending?limit=50`, {
-    headers: { Authorization: `Bearer ${token}` },
-  })
+  let r
+  try {
+    r = await fetch(`${apiBase}/admin/moderation/pending?limit=50`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+  } catch (err) {
+    throw new Error(explainNetworkError(apiBase, err))
+  }
   if (r.status === 401 || r.status === 403) {
     throw new Error('unauthorized')
   }
@@ -45,14 +77,19 @@ async function apiPending(apiBase, token) {
 }
 
 async function apiAction(apiBase, path, token, type, id) {
-  const r = await fetch(`${apiBase}/admin/moderation/${path}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({ type, id }),
-  })
+  let r
+  try {
+    r = await fetch(`${apiBase}/admin/moderation/${path}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ type, id }),
+    })
+  } catch (err) {
+    throw new Error(explainNetworkError(apiBase, err))
+  }
   if (!r.ok) {
     throw new Error(`Action failed (${r.status})`)
   }
