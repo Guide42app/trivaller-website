@@ -11,7 +11,7 @@ function hostnameLooksLikeIpv4(urlString) {
   }
 }
 
-/** Same-origin proxy on Vercel (see api/trivaller-backend/[...path].js + BACKEND_HTTP_ORIGIN). */
+/** Same-origin proxy on Vercel (vercel.json → api/[...slug].js + BACKEND_HTTP_ORIGIN). */
 const PROXY_API_BASE = '/api/trivaller-backend'
 
 /**
