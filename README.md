@@ -31,8 +31,9 @@ Browsers block `https://yoursite.com` from calling `http://EC2:8080` (mixed cont
    `BACKEND_HTTP_ORIGIN` = `http://YOUR_EC2_PUBLIC_IP:8080` (no `/api`).
 2. For production builds, set  
    `VITE_API_BASE_URL` = `/api/trivaller-backend`  
-   (relative path; `vercel.json` rewrites to `/api/ec2-proxy/*` and `api/[...slug].js` forwards to Spring’s `/api/...`).
-3. Redeploy the site.
+   (relative path; `api/trivaller-backend/[...path].js` forwards to Spring’s `/api/...`).
+3. After deploy, open **`https://trivaller.com/api/health`** — if that 404s, Vercel is not deploying the `api/` folder (check **Root Directory** = repo folder that contains `api/`, not only `dist`).
+4. Redeploy the site.
 
 **Local dev** with the same URL shape: use `VITE_API_BASE_URL=/api/trivaller-backend` in `.env`; Vite proxies to Spring (default `http://127.0.0.1:8081`, override with `VITE_DEV_BACKEND_ORIGIN` if needed).
 
@@ -41,10 +42,10 @@ Browsers block `https://yoursite.com` from calling `http://EC2:8080` (mixed cont
 ### “Login failed (405)” or “404” on `/api/trivaller-backend/...`
 
 1. **405** — SPA rewrite was catching `/api/*` (fixed: `vercel.json` excludes `api/` from the HTML fallback).
-2. **404** — Nested `api/trivaller-backend/[...path].js` often doesn’t register on Vercel. This repo uses a **rewrite** to `/api/ec2-proxy/:path*` and a root **`api/[...slug].js`** handler that forwards to Spring. Redeploy after pulling.
+2. **404** — Root `api/[...slug].js` often doesn’t register on Vercel with Vite; this repo uses **`api/trivaller-backend/[...path].js`** instead (no rewrite). Test **`/api/health`** after deploy.
 
 ### Admin `/admin` checklist
 
-- **Vercel:** `BACKEND_HTTP_ORIGIN=http://EC2_IP:8080` (no `/api`). The proxy sets the correct `Host` header for Tomcat.
+- **Vercel:** `BACKEND_HTTP_ORIGIN=http://EC2_IP:8080` (no `/api`). Root Directory must be the app root (folder containing `api/` + `vercel.json`). The proxy sets the correct `Host` header for Tomcat.
 - **Spring:** `server.servlet.context-path=/api` (already set). Login is `POST /api/auth/login` (same path the proxy forwards to).
 - **If `VITE_API_BASE_URL` is unset** on an HTTPS deploy, the admin page defaults to `/api/trivaller-backend` (the proxy).

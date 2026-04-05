@@ -1,10 +1,31 @@
 /**
- * Handles /api/ec2-proxy/* after vercel.json rewrite from /api/trivaller-backend/*.
- * Path rewrite preserves query string (e.g. ?limit=50) on internal rewrites.
+ * Proxies /api/trivaller-backend/* → BACKEND_HTTP_ORIGIN/api/*
+ * Nested route (Vite + Vercel): root-level api/[...slug].js often never runs — use this path instead.
  *
  * Vercel env: BACKEND_HTTP_ORIGIN=http://YOUR_EC2_IP:8080 (no /api)
  */
-const PREFIX = '/api/ec2-proxy/'
+const PREFIX = '/api/trivaller-backend/'
+
+function springPathFromRequest(req) {
+  const host = req.headers.host || 'localhost'
+  const forwardedProto = req.headers['x-forwarded-proto']
+  const proto = (Array.isArray(forwardedProto) ? forwardedProto[0] : forwardedProto) || 'https'
+  const u = new URL(req.url || '/', `${proto}://${host}`)
+  const pathname = u.pathname
+
+  if (pathname.startsWith(PREFIX)) {
+    return decodeURIComponent(pathname.slice(PREFIX.length))
+  }
+  // Vercel may pass only the suffix (e.g. /auth/login) relative to this function
+  if (pathname.startsWith('/') && pathname !== '/' && !pathname.startsWith('/api/')) {
+    return decodeURIComponent(pathname.replace(/^\//, ''))
+  }
+  const q = req.query?.path
+  if (q != null && q !== '') {
+    return Array.isArray(q) ? q.join('/') : String(q)
+  }
+  return ''
+}
 
 export default async function handler(req, res) {
   const backend = process.env.BACKEND_HTTP_ORIGIN?.trim()
@@ -16,17 +37,19 @@ export default async function handler(req, res) {
     return
   }
 
-  const u = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`)
-  if (!u.pathname.startsWith(PREFIX)) {
-    res.status(404).send('Not found')
+  const springPath = springPathFromRequest(req)
+  if (!springPath) {
+    res.status(404).json({ message: 'Missing API path' })
     return
   }
 
-  const springPath = decodeURIComponent(u.pathname.slice(PREFIX.length))
-  const target = `${backend.replace(/\/$/, '')}/api/${springPath}${u.search}`
+  const search =
+    typeof req.url === 'string' && req.url.includes('?')
+      ? req.url.slice(req.url.indexOf('?'))
+      : ''
+  const target = `${backend.replace(/\/$/, '')}/api/${springPath}${search}`
   const targetUrl = new URL(target)
 
-  // Do not forward the browser/Vercel Host to EC2 — Tomcat often rejects mismatched Host → 404/400.
   const hopByHop = new Set([
     'connection',
     'keep-alive',

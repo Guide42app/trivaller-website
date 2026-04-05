@@ -1,10 +1,6 @@
 {
   "rewrites": [
     {
-      "source": "/api/trivaller-backend/:path*",
-      "destination": "/api/ec2-proxy/:path*"
-    },
-    {
       "source": "/((?!api/).*)",
       "destination": "/"
     }
