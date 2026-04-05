@@ -41,7 +41,7 @@ function explainNetworkError(apiBase, err) {
       return `Could not reach ${apiBase}. Start the backend on that host/port (e.g. ./gradlew bootRun — default is port 8081 in application.properties), or create trivaller-website/.env with VITE_API_BASE_URL=http://localhost:YOUR_PORT/api (same base as EXPO_PUBLIC_BACKEND_URL in the app). EC2 security groups only apply when the API is on EC2, not for localhost.`
     }
     if (apiBase.startsWith('https://') && hostnameLooksLikeIpv4(apiBase)) {
-      return `Could not reach ${apiBase}. A raw EC2 IP on port 8080 is almost always HTTP only (Spring is not serving TLS there). https:// on an IP also won’t get a normal public certificate. Use a DNS name, nginx + Let’s Encrypt in front of the JVM, and VITE_API_BASE_URL=https://api.yourdomain.com/api — or use http://IP:8080/api only when you open the admin page on http://localhost (not from https://trivaller.com).`
+      return `Could not reach ${apiBase}. A raw EC2 IP almost never serves HTTPS on 8080 (Spring is HTTP there). Fix: use http://IP:8080/api only from an HTTP page (e.g. local dev), or put TLS on a real hostname (nginx + Let’s Encrypt), or use the Vercel proxy: VITE_API_BASE_URL=/api/trivaller-backend and BACKEND_HTTP_ORIGIN=http://IP:8080 — see trivaller-website README and .env.example.`
     }
     return `Could not reach ${apiBase}. Check EC2 security group (inbound port), the URL/port, and that the backend allows CORS for this site.`
   }
