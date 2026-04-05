@@ -37,3 +37,10 @@ Browsers block `https://yoursite.com` from calling `http://EC2:8080` (mixed cont
 **Local dev** with the same URL shape: use `VITE_API_BASE_URL=/api/trivaller-backend` in `.env`; Vite proxies to Spring (default `http://127.0.0.1:8081`, override with `VITE_DEV_BACKEND_ORIGIN` if needed).
 
 **Option B — TLS on the API** (nginx + Let’s Encrypt on a hostname such as `api.trivaller.com` proxying to `http://127.0.0.1:8080`), then set `VITE_API_BASE_URL=https://api.trivaller.com/api`.
+
+### “Login failed (405)” on `/admin`
+
+Usually one of:
+
+1. **`vercel.json` SPA rewrite ate `/api/*`** — POST was rewritten to `/` and the static shell doesn’t allow POST. This repo excludes `/api/` from that rewrite; redeploy after pulling the latest `vercel.json`.
+2. **Proxy runtime** — `api/trivaller-backend/[...path].js` uses the Web `Request`/`Response` handler so POST is forwarded correctly. Redeploy after updating that file.
