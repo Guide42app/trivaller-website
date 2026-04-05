@@ -42,3 +42,9 @@ Browsers block `https://yoursite.com` from calling `http://EC2:8080` (mixed cont
 
 1. **405** — SPA rewrite was catching `/api/*` (fixed: `vercel.json` excludes `api/` from the HTML fallback).
 2. **404** — Nested `api/trivaller-backend/[...path].js` often doesn’t register on Vercel. This repo uses a **rewrite** to `/api/ec2-proxy/:path*` and a root **`api/[...slug].js`** handler that forwards to Spring. Redeploy after pulling.
+
+### Admin `/admin` checklist
+
+- **Vercel:** `BACKEND_HTTP_ORIGIN=http://EC2_IP:8080` (no `/api`). The proxy sets the correct `Host` header for Tomcat.
+- **Spring:** `server.servlet.context-path=/api` (already set). Login is `POST /api/auth/login` (same path the proxy forwards to).
+- **If `VITE_API_BASE_URL` is unset** on an HTTPS deploy, the admin page defaults to `/api/trivaller-backend` (the proxy).

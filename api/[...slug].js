@@ -24,7 +24,9 @@ export default async function handler(req, res) {
 
   const springPath = decodeURIComponent(u.pathname.slice(PREFIX.length))
   const target = `${backend.replace(/\/$/, '')}/api/${springPath}${u.search}`
+  const targetUrl = new URL(target)
 
+  // Do not forward the browser/Vercel Host to EC2 — Tomcat often rejects mismatched Host → 404/400.
   const hopByHop = new Set([
     'connection',
     'keep-alive',
@@ -34,6 +36,10 @@ export default async function handler(req, res) {
     'te',
     'trailer',
     'upgrade',
+    'x-forwarded-host',
+    'x-forwarded-proto',
+    'x-forwarded-port',
+    'x-forwarded-ssl',
   ])
 
   const headers = new Headers()
@@ -41,6 +47,7 @@ export default async function handler(req, res) {
     if (value === undefined || hopByHop.has(key.toLowerCase())) continue
     headers.set(key, Array.isArray(value) ? value.join(', ') : value)
   }
+  headers.set('host', targetUrl.host)
 
   let body
   if (req.method !== 'GET' && req.method !== 'HEAD') {

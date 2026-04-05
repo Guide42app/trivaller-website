@@ -56,6 +56,10 @@ function resolveApiBase() {
   if (import.meta.env.DEV) {
     return 'http://localhost:8081/api'
   }
+  // Production HTTPS (e.g. Vercel): same-origin proxy avoids mixed content without env mistakes
+  if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
+    return PROXY_API_BASE
+  }
   return ''
 }
 
