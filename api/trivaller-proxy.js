@@ -1,30 +1,27 @@
 /**
- * Proxies /api/trivaller-backend/* → BACKEND_HTTP_ORIGIN/api/*
- * Nested route (Vite + Vercel): root-level api/[...slug].js often never runs — use this path instead.
+ * Vercel: invoked via rewrite from /api/trivaller-backend/* (see vercel.json).
+ * Nested api/trivaller-backend/[...path].js is unreliable on Vite + Vercel static deploys.
  *
- * Vercel env: BACKEND_HTTP_ORIGIN=http://YOUR_EC2_IP:8080 (no /api)
+ * Env: BACKEND_HTTP_ORIGIN=http://YOUR_EC2_IP:8080 (no /api)
  */
-const PREFIX = '/api/trivaller-backend/'
+function springPathFromQuery(req) {
+  const raw = req.query?.segments
+  if (raw == null || raw === '') return ''
+  const s = Array.isArray(raw) ? raw.join('/') : String(raw)
+  try {
+    return decodeURIComponent(s)
+  } catch {
+    return s
+  }
+}
 
-function springPathFromRequest(req) {
-  const host = req.headers.host || 'localhost'
-  const forwardedProto = req.headers['x-forwarded-proto']
-  const proto = (Array.isArray(forwardedProto) ? forwardedProto[0] : forwardedProto) || 'https'
-  const u = new URL(req.url || '/', `${proto}://${host}`)
-  const pathname = u.pathname
-
-  if (pathname.startsWith(PREFIX)) {
-    return decodeURIComponent(pathname.slice(PREFIX.length))
-  }
-  // Vercel may pass only the suffix (e.g. /auth/login) relative to this function
-  if (pathname.startsWith('/') && pathname !== '/' && !pathname.startsWith('/api/')) {
-    return decodeURIComponent(pathname.replace(/^\//, ''))
-  }
-  const q = req.query?.path
-  if (q != null && q !== '') {
-    return Array.isArray(q) ? q.join('/') : String(q)
-  }
-  return ''
+function backendSearchFromRequest(req) {
+  const raw = typeof req.url === 'string' ? req.url : '/'
+  const u = new URL(raw, 'http://localhost')
+  const sp = new URLSearchParams(u.searchParams)
+  sp.delete('segments')
+  const q = sp.toString()
+  return q ? `?${q}` : ''
 }
 
 export default async function handler(req, res) {
@@ -37,16 +34,13 @@ export default async function handler(req, res) {
     return
   }
 
-  const springPath = springPathFromRequest(req)
+  const springPath = springPathFromQuery(req)
   if (!springPath) {
     res.status(404).json({ message: 'Missing API path' })
     return
   }
 
-  const search =
-    typeof req.url === 'string' && req.url.includes('?')
-      ? req.url.slice(req.url.indexOf('?'))
-      : ''
+  const search = backendSearchFromRequest(req)
   const target = `${backend.replace(/\/$/, '')}/api/${springPath}${search}`
   const targetUrl = new URL(target)
 

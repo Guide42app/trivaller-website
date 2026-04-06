@@ -40,7 +40,7 @@ Browsers block `https://yoursite.com` from calling `http://EC2:8080` (mixed cont
    `BACKEND_HTTP_ORIGIN` = `http://YOUR_EC2_PUBLIC_IP:8080` (no `/api`).
 2. For production builds, set  
    `VITE_API_BASE_URL` = `/api/trivaller-backend`  
-   (relative path; `api/trivaller-backend/[...path].js` forwards to Spring’s `/api/...`).
+   (relative path; `vercel.json` rewrites to `api/trivaller-proxy.js`, which forwards to Spring’s `/api/...`).
 3. After deploy, open **`https://trivaller.com/api/health`** — if that 404s, Vercel is not deploying the `api/` folder (check **Root Directory** = repo folder that contains `api/`, not only `dist`).
 4. Redeploy the site.
 
@@ -51,7 +51,7 @@ Browsers block `https://yoursite.com` from calling `http://EC2:8080` (mixed cont
 ### “Login failed (405)” or “404” on `/api/trivaller-backend/...`
 
 1. **405** — SPA rewrite was catching `/api/*` (fixed: `vercel.json` excludes `api/` from the HTML fallback).
-2. **404** — Root `api/[...slug].js` often doesn’t register on Vercel with Vite; this repo uses **`api/trivaller-backend/[...path].js`** instead (no rewrite). Test **`/api/health`** after deploy.
+2. **404** — Nested `api/trivaller-backend/[...path].js` often doesn’t run on Vite + Vercel; this repo uses **`vercel.json`** to rewrite `/api/trivaller-backend/*` → **`/api/trivaller-proxy`**. Test **`/api/health`** after deploy.
 
 ### Admin `/admin` checklist
 
