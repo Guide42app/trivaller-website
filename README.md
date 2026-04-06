@@ -15,6 +15,15 @@ npm install
 npm run dev
 ```
 
+### Admin panel on **localhost**
+
+1. Start the API (default **8081**): from `trivallerapp-backend` run `./gradlew bootRun` (with DB + `application-local` as you already use).
+2. Apply migrations so the seeded admin exists (e.g. Flyway **V33**): email **`admin@trivaller.internal`**, password **`TrivallerAdmin2026!`** (see backend `V33__seed_website_admin_user.sql`).
+3. From this repo: `npm run dev`, then open **`http://localhost:5173/admin`** (port shown in the terminal if different).
+4. The dev server proxies **`/api/trivaller-backend/*`** → **`http://127.0.0.1:8081/api/*`**. If your API uses another host/port, set **`VITE_DEV_BACKEND_ORIGIN`** in `.env` and restart Vite.
+
+Do not use **`https://localhost`** for the site while the API is **`http://`** — the browser will block it (mixed content). Use plain **`http://localhost:5173`** for local admin.
+
 ## Build
 
 ```bash
