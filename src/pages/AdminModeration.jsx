@@ -47,6 +47,10 @@ function effectiveApiBaseForHttpsSite(fromEnv) {
     const host = u.hostname
     const isPublicIpv4 = /^\d{1,3}(\.\d{1,3}){3}$/.test(host)
     const isLoopback = host === 'localhost' || host === '127.0.0.1'
+    // Vercel/production is HTTPS; a baked-in localhost API URL (copied from .env.example) must not win.
+    if (window.location.protocol === 'https:' && isLoopback) {
+      return PROXY_API_BASE
+    }
     if (!isPublicIpv4 || isLoopback) {
       return base
     }
@@ -126,7 +130,11 @@ async function apiLogin(apiBase, email, password) {
   }
   const data = await r.json().catch(() => ({}))
   if (!r.ok) {
-    throw new Error(data.message || data.error || `Login failed (${r.status})`)
+    const hint =
+      r.status === 502 && apiBase === PROXY_API_BASE
+        ? ' Check Vercel env BACKEND_HTTP_ORIGIN=http://YOUR_EC2_IP:8080 (no /api) and redeploy.'
+        : ''
+    throw new Error((data.message || data.error || `Login failed (${r.status})`) + hint)
   }
   const token = data.access_token || data.accessToken
   if (!token) {
