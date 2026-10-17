@@ -1,0 +1,15 @@
+export const appScreens = [
+  { src: '/screens/f1.jpg', alt: 'Trivaller home — For you feed and nearby attractions', label: 'Home' },
+  { src: '/screens/f2.jpg', alt: 'Trivaller trip planner screen', label: 'Trips' },
+  { src: '/screens/f3.jpg', alt: 'Trivaller destination discovery', label: 'Explore' },
+  { src: '/screens/f4.jpg', alt: 'Trivaller itinerary view', label: 'Itinerary' },
+  { src: '/screens/f5.jpg', alt: 'Trivaller Jeeva AI assistant', label: 'Jeeva' },
+  { src: '/screens/f6.jpg', alt: 'Trivaller travel threads', label: 'Threads' },
+  { src: '/screens/f7.jpg', alt: 'Trivaller deals and offers', label: 'Deals' },
+  { src: '/screens/f8.jpg', alt: 'Trivaller trip details', label: 'Details' },
+  { src: '/screens/f9.jpg', alt: 'Trivaller map and routes', label: 'Routes' },
+  { src: '/screens/f10.jpg', alt: 'Trivaller shared trip view', label: 'Together' },
+  { src: '/screens/f11.jpg', alt: 'Trivaller place details', label: 'Places' },
+  { src: '/screens/f12.jpg', alt: 'Trivaller profile and memories', label: 'Profile' },
+  { src: '/screens/f13.jpg', alt: 'Trivaller business listing', label: 'Business' },
+] as const
