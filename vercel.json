@@ -1,8 +1,3 @@
 {
-  "rewrites": [
-    {
-      "source": "/api/trivaller-backend/(.*)",
-      "destination": "/api/trivaller-proxy?segments=$1"
-    }
-  ]
+  "framework": "nextjs"
 }

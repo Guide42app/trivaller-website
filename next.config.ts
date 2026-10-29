@@ -12,17 +12,22 @@ const nextConfig: NextConfig = {
     ],
   },
   async rewrites() {
-    if (process.env.NODE_ENV !== 'development') return []
+    if (process.env.NODE_ENV !== 'development') return { beforeFiles: [], afterFiles: [], fallback: [] }
     const backend =
       process.env.DEV_BACKEND_ORIGIN?.trim() ||
       process.env.VITE_DEV_BACKEND_ORIGIN?.trim() ||
       'http://127.0.0.1:8081'
-    return [
-      {
-        source: '/api/trivaller-backend/:path*',
-        destination: `${backend.replace(/\/$/, '')}/api/:path*`,
-      },
-    ]
+    // beforeFiles so this wins over the app/api/trivaller-backend proxy route in dev.
+    return {
+      beforeFiles: [
+        {
+          source: '/api/trivaller-backend/:path*',
+          destination: `${backend.replace(/\/$/, '')}/api/:path*`,
+        },
+      ],
+      afterFiles: [],
+      fallback: [],
+    }
   },
 }
 
