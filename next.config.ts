@@ -16,7 +16,7 @@ const nextConfig: NextConfig = {
     const backend =
       process.env.DEV_BACKEND_ORIGIN?.trim() ||
       process.env.VITE_DEV_BACKEND_ORIGIN?.trim() ||
-      'http://127.0.0.1:8081'
+      'http://127.0.0.1:8080'
     // beforeFiles so this wins over the app/api/trivaller-backend proxy route in dev.
     return {
       beforeFiles: [

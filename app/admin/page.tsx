@@ -1,126 +1,150 @@
-// @ts-nocheck
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import Image from 'next/image'
+import Link from 'next/link'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import {
+  Aperture,
+  ArrowLeft,
+  BadgeCheck,
+  BookOpen,
+  Check,
+  Eye,
+  EyeOff,
+  Inbox,
+  Landmark,
+  LogOut,
+  RotateCw,
+  Store,
+  X,
+} from 'lucide-react'
+import { cn } from '@/lib/cn'
 
 const TOKEN_KEY = 'trivaller_admin_token'
+const PROXY_API_BASE = '/api/trivaller-backend'
 
-const TYPE_LABELS = {
-  POST: 'Post',
-  GUIDE: 'Guide',
-  PLACE_DETAILS: 'Place details',
-  BUSINESS: 'Business',
+type QueueType = 'POST' | 'GUIDE' | 'PLACE_DETAILS' | 'BUSINESS'
+type TabKey = 'all' | 'posts' | 'guides' | 'placeDetails' | 'businesses'
+
+type Entry = {
+  type: QueueType
+  id: number
+  title: string
+  imageUrl: string | null
+  authorUserId: number | null
+  authorName: string
+  createdAt: string
+  postId: number | null
 }
 
-function typeLabel(type) {
-  return TYPE_LABELS[type] || type || 'Item'
+type PendingPayload = {
+  posts: Entry[]
+  guides: Entry[]
+  placeDetails: Entry[]
+  businesses: Entry[]
 }
 
-function hostnameLooksLikeIpv4(urlString) {
+const TYPE_META: Record<
+  QueueType,
+  { label: string; hint: string; icon: typeof Aperture; chip: string }
+> = {
+  POST: {
+    label: 'Post',
+    hint: 'Place post',
+    icon: Aperture,
+    chip: 'bg-forest-mid text-ink',
+  },
+  GUIDE: {
+    label: 'Guide',
+    hint: 'Travel guide',
+    icon: BookOpen,
+    chip: 'bg-forest-mid text-ink',
+  },
+  PLACE_DETAILS: {
+    label: 'Place',
+    hint: 'Place details',
+    icon: Landmark,
+    chip: 'bg-forest-mid text-ink',
+  },
+  BUSINESS: {
+    label: 'Business',
+    hint: 'Business listing',
+    icon: Store,
+    chip: 'bg-forest-mid text-ink',
+  },
+}
+
+const STATS: { key: TabKey; label: string; field: keyof PendingPayload; icon: typeof Aperture }[] = [
+  { key: 'posts', label: 'Posts', field: 'posts', icon: Aperture },
+  { key: 'guides', label: 'Guides', field: 'guides', icon: BookOpen },
+  { key: 'placeDetails', label: 'Places', field: 'placeDetails', icon: Landmark },
+  { key: 'businesses', label: 'Businesses', field: 'businesses', icon: Store },
+]
+
+const TABS: { key: TabKey; label: string; field?: keyof PendingPayload; icon?: typeof Aperture }[] = [
+  { key: 'all', label: 'All' },
+  { key: 'posts', label: 'Posts', field: 'posts', icon: Aperture },
+  { key: 'guides', label: 'Guides', field: 'guides', icon: BookOpen },
+  { key: 'placeDetails', label: 'Places', field: 'placeDetails', icon: Landmark },
+  { key: 'businesses', label: 'Businesses', field: 'businesses', icon: Store },
+]
+
+function hostnameLooksLikeIpv4(urlString: string) {
   try {
-    const host = new URL(urlString).hostname
-    return /^\d{1,3}(\.\d{1,3}){3}$/.test(host)
+    return /^\d{1,3}(\.\d{1,3}){3}$/.test(new URL(urlString).hostname)
   } catch {
     return false
   }
 }
 
-/** Same-origin proxy on Vercel (vercel.json → api/trivaller-proxy.js + BACKEND_HTTP_ORIGIN). */
-const PROXY_API_BASE = '/api/trivaller-backend'
-
-/**
- * On HTTPS production pages, if NEXT_PUBLIC_API_BASE_URL points at a public IPv4 (typical EC2 mistake:
- * https://1.2.3.4:8080/api or http://1.2.3.4:8080/api), use the Vercel proxy instead so the
- * browser never talks to the IP directly. Requires BACKEND_HTTP_ORIGIN on Vercel.
- */
-function effectiveApiBaseForHttpsSite(fromEnv) {
+function effectiveApiBaseForHttpsSite(fromEnv: string) {
   const base = fromEnv.replace(/\/$/, '')
-  if (process.env.NEXT_PUBLIC_DISABLE_IP_API_PROXY === 'true') {
-    return base
-  }
-  if (!(process.env.NODE_ENV === 'production') || typeof window === 'undefined') {
-    return base
-  }
-  if (window.location.protocol !== 'https:') {
-    return base
-  }
+  if (process.env.NEXT_PUBLIC_DISABLE_IP_API_PROXY === 'true') return base
+  if (process.env.NODE_ENV !== 'production' || typeof window === 'undefined') return base
+  if (window.location.protocol !== 'https:') return base
   try {
     const u = new URL(base)
     const host = u.hostname
     const isPublicIpv4 = /^\d{1,3}(\.\d{1,3}){3}$/.test(host)
     const isLoopback = host === 'localhost' || host === '127.0.0.1'
-    // Vercel/production is HTTPS; a baked-in localhost API URL (copied from .env.example) must not win.
-    if (window.location.protocol === 'https:' && isLoopback) {
-      return PROXY_API_BASE
-    }
-    if (!isPublicIpv4 || isLoopback) {
-      return base
-    }
-    if (u.protocol === 'https:' || u.protocol === 'http:') {
-      return PROXY_API_BASE
-    }
+    if (isLoopback || isPublicIpv4) return PROXY_API_BASE
   } catch {
-    // keep base
+    return base
   }
   return base
 }
 
-/** Same convention as the mobile app: base URL includes Spring’s /api context path (or proxy path). */
 function resolveApiBase() {
   const fromEnv = process.env.NEXT_PUBLIC_API_BASE_URL?.trim()
-  if (fromEnv) {
-    return effectiveApiBaseForHttpsSite(fromEnv)
-  }
-  if ((process.env.NODE_ENV === 'development')) {
-    // Same-origin via Vite proxy (vite.config.js) — no CORS, same path as Vercel
-    return PROXY_API_BASE
-  }
-  // Production HTTPS (e.g. Vercel): same-origin proxy avoids mixed content without env mistakes
-  if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
-    return PROXY_API_BASE
-  }
+  if (fromEnv) return effectiveApiBaseForHttpsSite(fromEnv)
+  if (process.env.NODE_ENV === 'development') return PROXY_API_BASE
+  if (typeof window !== 'undefined' && window.location.protocol === 'https:') return PROXY_API_BASE
   return ''
 }
 
-/**
- * Browsers block HTTPS pages from calling http:// APIs (mixed content) — shows as "Failed to fetch".
- */
-function explainNetworkError(apiBase, err) {
-  const pageHttps =
-    typeof window !== 'undefined' && window.location.protocol === 'https:'
+function explainNetworkError(apiBase: string, err: unknown) {
+  const pageHttps = typeof window !== 'undefined' && window.location.protocol === 'https:'
   const apiHttp = apiBase.startsWith('http://')
   if (pageHttps && apiHttp) {
-    return 'Your site uses HTTPS but NEXT_PUBLIC_API_BASE_URL is HTTP. Browsers block that. Use HTTPS on EC2 (nginx + Let’s Encrypt) and set NEXT_PUBLIC_API_BASE_URL to https://your-api-domain/api — or test admin from http://localhost only during dev.'
+    return 'This page is HTTPS but the API URL is HTTP. Browsers block that mix. Use the same-origin proxy, or an HTTPS API host.'
   }
-  if (
-    pageHttps &&
-    apiBase === PROXY_API_BASE &&
-    err instanceof TypeError &&
-    String(err.message).includes('fetch')
-  ) {
-    return `Could not reach ${apiBase} (Vercel → EC2 proxy). In Vercel → Environment Variables add BACKEND_HTTP_ORIGIN=http://YOUR_EC2_IP:8080 (no /api), redeploy, and ensure EC2 security group allows inbound 8080 from the internet (or from Vercel if you lock it down).`
+  if (pageHttps && apiBase === PROXY_API_BASE && err instanceof TypeError && String(err.message).includes('fetch')) {
+    return `Could not reach ${apiBase}. Set BACKEND_HTTP_ORIGIN on Vercel to your NestJS host (no /api) and redeploy.`
   }
   if (err instanceof TypeError && String(err.message).includes('fetch')) {
-    const isLocalDev = (process.env.NODE_ENV === 'development')
-    if (isLocalDev && apiBase === PROXY_API_BASE) {
-      return `Could not reach ${apiBase}. Start the backend (e.g. cd trivallerapp-backend && ./gradlew bootRun). Default API is http://127.0.0.1:8081 — if yours uses another port, set DEV_BACKEND_ORIGIN in trivaller-website/.env and restart npm run dev.`
-    }
-    if (
-      isLocalDev &&
-      (apiBase.includes('localhost') || apiBase.includes('127.0.0.1'))
-    ) {
-      return `Could not reach ${apiBase}. Start the backend on that host/port (e.g. ./gradlew bootRun), or use NEXT_PUBLIC_API_BASE_URL=/api/trivaller-backend with the Vite proxy (see README).`
+    if (process.env.NODE_ENV === 'development' && apiBase === PROXY_API_BASE) {
+      return 'Could not reach NestJS. Start trivaller-backend with npm run start:dev (http://127.0.0.1:8080).'
     }
     if (apiBase.startsWith('https://') && hostnameLooksLikeIpv4(apiBase)) {
-      return `Could not reach ${apiBase}. A raw EC2 IP almost never serves HTTPS on 8080 (Spring is HTTP there). Fix: use http://IP:8080/api only from an HTTP page (e.g. local dev), or put TLS on a real hostname (nginx + Let’s Encrypt), or use the Vercel proxy: NEXT_PUBLIC_API_BASE_URL=/api/trivaller-backend and BACKEND_HTTP_ORIGIN=http://IP:8080 — see trivaller-website README and .env.example.`
+      return `Could not reach ${apiBase}. Use the same-origin proxy instead of calling a raw IP over HTTPS.`
     }
-    return `Could not reach ${apiBase}. Check EC2 security group (inbound port), the URL/port, and that the backend allows CORS for this site.`
+    return `Could not reach ${apiBase}. Check that NestJS is running and allows this origin.`
   }
   return err instanceof Error ? err.message : 'Request failed'
 }
 
-async function apiLogin(apiBase, email, password) {
-  let r
+async function apiLogin(apiBase: string, email: string, password: string) {
+  let r: Response
   try {
     r = await fetch(`${apiBase}/auth/login`, {
       method: 'POST',
@@ -130,23 +154,18 @@ async function apiLogin(apiBase, email, password) {
   } catch (err) {
     throw new Error(explainNetworkError(apiBase, err))
   }
-  const data = await r.json().catch(() => ({}))
+  const data = (await r.json().catch(() => ({}))) as { message?: string; error?: string; access_token?: string; accessToken?: string }
   if (!r.ok) {
-    const hint =
-      r.status === 502 && apiBase === PROXY_API_BASE
-        ? ' Check Vercel env BACKEND_HTTP_ORIGIN=http://YOUR_EC2_IP:8080 (no /api) and redeploy.'
-        : ''
+    const hint = r.status === 502 && apiBase === PROXY_API_BASE ? ' Set BACKEND_HTTP_ORIGIN on Vercel and redeploy.' : ''
     throw new Error((data.message || data.error || `Login failed (${r.status})`) + hint)
   }
   const token = data.access_token || data.accessToken
-  if (!token) {
-    throw new Error('No access token in response')
-  }
+  if (!token) throw new Error('No access token in response')
   return token
 }
 
-async function apiPending(apiBase, token) {
-  let r
+async function apiPending(apiBase: string, token: string) {
+  let r: Response
   try {
     r = await fetch(`${apiBase}/admin/moderation/pending?limit=50`, {
       headers: { Authorization: `Bearer ${token}` },
@@ -154,384 +173,161 @@ async function apiPending(apiBase, token) {
   } catch (err) {
     throw new Error(explainNetworkError(apiBase, err))
   }
-  if (r.status === 401 || r.status === 403) {
-    throw new Error('unauthorized')
-  }
-  if (!r.ok) {
-    throw new Error(`Failed to load queue (${r.status})`)
-  }
-  return r.json()
+  if (r.status === 401 || r.status === 403) throw new Error('unauthorized')
+  if (!r.ok) throw new Error(`Failed to load queue (${r.status})`)
+  return r.json() as Promise<PendingPayload>
 }
 
-async function apiAction(apiBase, path, token, type, id) {
-  let r
+async function apiAction(apiBase: string, path: string, token: string, type: QueueType, id: number) {
+  let r: Response
   try {
     r = await fetch(`${apiBase}/admin/moderation/${path}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ type, id }),
     })
   } catch (err) {
     throw new Error(explainNetworkError(apiBase, err))
   }
-  if (!r.ok) {
-    throw new Error(`Action failed (${r.status})`)
-  }
+  if (!r.ok) throw new Error(`Action failed (${r.status})`)
 }
 
-function Spinner({ className = '' }) {
+function relativeTime(iso?: string) {
+  if (!iso) return ''
+  const then = new Date(iso).getTime()
+  if (Number.isNaN(then)) return ''
+  const delta = Date.now() - then
+  const min = Math.round(delta / 60000)
+  if (min < 1) return 'Just now'
+  if (min < 60) return `${min}m ago`
+  const hr = Math.round(min / 60)
+  if (hr < 24) return `${hr}h ago`
+  const day = Math.round(hr / 24)
+  if (day < 7) return `${day}d ago`
+  return new Date(iso).toLocaleDateString()
+}
+
+function BrandMark({ light = false }: { light?: boolean }) {
   return (
-    <svg
-      className={`size-5 animate-spin text-[var(--color-primary)] ${className}`}
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      viewBox="0 0 24 24"
-      aria-hidden
-    >
+    <div className="flex items-center gap-2.5">
+      <Image src="/mark.png" alt="" width={36} height={36} className="rounded-full" />
+      <span className={cn('text-lg font-semibold tracking-tight', light ? 'text-white' : 'text-ink')}>Trivaller</span>
+    </div>
+  )
+}
+
+function Spinner({ className = '' }: { className?: string }) {
+  return (
+    <svg className={cn('size-5 animate-spin', className)} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden>
       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-      <path
-        className="opacity-75"
-        fill="currentColor"
-        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-      />
+      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
     </svg>
   )
 }
 
-function EmptyQueueIllustration() {
+function LoginScreen({
+  email,
+  password,
+  error,
+  loading,
+  onEmail,
+  onPassword,
+  onSubmit,
+}: {
+  email: string
+  password: string
+  error: string
+  loading: boolean
+  onEmail: (v: string) => void
+  onPassword: (v: string) => void
+  onSubmit: (e: React.FormEvent) => void
+}) {
+  const [showPassword, setShowPassword] = useState(false)
+
   return (
-    <div
-      className="mx-auto mb-4 flex size-16 items-center justify-center rounded-2xl bg-[var(--color-primary-muted)] text-[var(--color-primary)]"
-      aria-hidden
-    >
-      <svg className="size-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-        />
-      </svg>
-    </div>
-  )
-}
+    <div className="relative min-h-svh overflow-hidden">
+      <Image
+        src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=2400&q=80"
+        alt=""
+        fill
+        priority
+        sizes="100vw"
+        className="object-cover"
+      />
+      <div className="absolute inset-0 bg-black/55" />
 
-function StatCard({ label, value, accent }) {
-  return (
-    <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 shadow-sm transition-shadow hover:shadow-md dark:border-neutral-700 dark:bg-neutral-900/80">
-      <p className="text-xs font-medium uppercase tracking-wide text-[var(--color-text-muted)]">{label}</p>
-      <p className={`mt-1 font-display text-2xl font-semibold tabular-nums ${accent}`}>{value}</p>
-    </div>
-  )
-}
+      <div className="relative flex min-h-svh flex-col px-4 py-5 sm:px-6">
+        <header className="mx-auto flex w-full max-w-6xl items-center justify-between">
+          <BrandMark light />
+          <Link href="/" className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium text-white/90 backdrop-blur-sm transition hover:bg-white/20">
+            <ArrowLeft size={16} />
+            Back to site
+          </Link>
+        </header>
 
-function EntryRow({ entry, onApprove, onReject, busy }) {
-  const img = entry.imageUrl
-  const label = typeLabel(entry.type)
-  return (
-    <li className="group rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-sm transition-all duration-200 hover:border-[var(--color-primary-muted)] hover:shadow-md dark:border-neutral-700 dark:bg-neutral-900/90 dark:hover:border-emerald-900/50">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-        {img ? (
-          <img
-            src={img}
-            alt=""
-            className="h-28 w-28 shrink-0 rounded-xl object-cover ring-1 ring-black/5 dark:ring-white/10"
-          />
-        ) : (
-          <div className="flex h-28 w-28 shrink-0 items-center justify-center rounded-xl bg-neutral-100 text-xs text-neutral-400 ring-1 ring-black/5 dark:bg-neutral-800 dark:text-neutral-500 dark:ring-white/5">
-            No preview
-          </div>
-        )}
-        <div className="min-w-0 flex-1">
-          <div className="mb-2 flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center rounded-full bg-[var(--color-primary-muted)] px-2.5 py-0.5 text-xs font-semibold text-[var(--color-primary-dark)] dark:text-emerald-300">
-              {label}
-            </span>
-            {entry.createdAt && (
-              <span className="text-xs text-[var(--color-text-muted)]">
-                {new Date(entry.createdAt).toLocaleString()}
-              </span>
-            )}
-          </div>
-          <p className="font-display text-lg font-semibold text-[var(--color-text-primary)] dark:text-neutral-100">
-            {entry.title || 'Untitled'}
-          </p>
-          <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-            <span className="text-[var(--color-text-muted)]">Author</span>{' '}
-            {entry.authorName || '—'}
-            {entry.authorUserId != null && (
-              <span className="text-[var(--color-text-muted)]"> · user #{entry.authorUserId}</span>
-            )}
-          </p>
-          {entry.postId != null && (
-            <p className="mt-1 text-xs text-[var(--color-text-muted)]">Post id · {entry.postId}</p>
-          )}
-        </div>
-        <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:items-start">
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => onApprove(entry.type, entry.id)}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--color-primary)] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[var(--color-primary-dark)] disabled:pointer-events-none disabled:opacity-45"
-          >
-            Approve
-          </button>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => onReject(entry.type, entry.id)}
-            className="inline-flex items-center justify-center rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-semibold text-red-700 transition hover:bg-red-50 disabled:pointer-events-none disabled:opacity-45 dark:border-red-900/60 dark:bg-red-950/20 dark:text-red-400 dark:hover:bg-red-950/40"
-          >
-            Reject
-          </button>
-        </div>
-      </div>
-    </li>
-  )
-}
-
-function Section({ title, entries, onApprove, onReject, busy }) {
-  const count = entries?.length ?? 0
-  return (
-    <section className="mb-12 scroll-mt-24">
-      <div className="mb-4 flex flex-wrap items-end justify-between gap-2 border-b border-[var(--color-border)] pb-3 dark:border-neutral-800">
-        <div>
-          <h2 className="font-display text-xl font-semibold text-[var(--color-text-primary)] dark:text-neutral-100">
-            {title}
-          </h2>
-          <p className="mt-0.5 text-sm text-[var(--color-text-secondary)]">
-            {count === 0 ? 'Nothing waiting in this queue' : `${count} pending`}
-          </p>
-        </div>
-        {count > 0 && (
-          <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-900 dark:bg-amber-950/50 dark:text-amber-200">
-            {count} to review
-          </span>
-        )}
-      </div>
-      {!entries?.length ? (
-        <div className="rounded-2xl border border-dashed border-[var(--color-border)] bg-[var(--color-bg-elevated)]/60 px-6 py-12 text-center dark:border-neutral-700 dark:bg-neutral-900/40">
-          <EmptyQueueIllustration />
-          <p className="text-sm font-medium text-[var(--color-text-secondary)]">Queue is clear</p>
-          <p className="mt-1 text-xs text-[var(--color-text-muted)]">New submissions will show up here.</p>
-        </div>
-      ) : (
-        <ul className="space-y-4">
-          {entries.map((e) => (
-            <EntryRow key={`${e.type}-${e.id}`} entry={e} onApprove={onApprove} onReject={onReject} busy={busy} />
-          ))}
-        </ul>
-      )}
-    </section>
-  )
-}
-
-export default function AdminModeration() {
-  const apiBase = resolveApiBase()
-
-  const [token, setToken] = useState<string | null>(null)
-  const [hydrated, setHydrated] = useState(false)
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [data, setData] = useState(null)
-  const [busy, setBusy] = useState(false)
-
-  useEffect(() => {
-    setToken(sessionStorage.getItem(TOKEN_KEY))
-    setHydrated(true)
-  }, [])
-
-  const load = useCallback(
-    async (t) => {
-      setLoading(true)
-      setError('')
-      try {
-        const json = await apiPending(apiBase, t)
-        setData(json)
-      } catch (e) {
-        if (e.message === 'unauthorized') {
-          sessionStorage.removeItem(TOKEN_KEY)
-          setToken(null)
-          setError('Session expired or not an admin. Sign in again.')
-        } else {
-          setError(e.message || 'Failed to load')
-        }
-      } finally {
-        setLoading(false)
-      }
-    },
-    [apiBase],
-  )
-
-  useEffect(() => {
-    if (hydrated && token && apiBase) {
-      load(token)
-    }
-  }, [token, load, apiBase, hydrated])
-
-  const handleLogin = async (e) => {
-    e.preventDefault()
-    setError('')
-    setLoading(true)
-    try {
-      const t = await apiLogin(apiBase, email.trim(), password)
-      sessionStorage.setItem(TOKEN_KEY, t)
-      setPassword('')
-      setToken(t)
-    } catch (err) {
-      setError(err.message || 'Login failed')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const logout = () => {
-    sessionStorage.removeItem(TOKEN_KEY)
-    setToken(null)
-    setData(null)
-  }
-
-  const onApprove = async (type, id) => {
-    if (!token) return
-    setBusy(true)
-    try {
-      await apiAction(apiBase, 'approve', token, type, id)
-      await load(token)
-    } catch (err) {
-      setError(err.message || 'Approve failed')
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  const onReject = async (type, id) => {
-    if (!token) return
-    setBusy(true)
-    try {
-      await apiAction(apiBase, 'reject', token, type, id)
-      await load(token)
-    } catch (err) {
-      setError(err.message || 'Reject failed')
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  if (!hydrated) {
-    return (
-      <div className="grid min-h-screen place-items-center bg-neutral-950 text-sm text-neutral-400">
-        Loading…
-      </div>
-    )
-  }
-
-  if (!apiBase) {
-    return (
-      <div className="relative min-h-screen overflow-hidden bg-[var(--color-bg)] px-4 py-16 dark:bg-neutral-950">
-        <div
-          className="pointer-events-none absolute inset-0 opacity-40 dark:opacity-20"
-          style={{
-            background:
-              'radial-gradient(ellipse 80% 50% at 50% -20%, rgba(5, 150, 105, 0.35), transparent), radial-gradient(ellipse 60% 40% at 100% 50%, rgba(16, 185, 129, 0.12), transparent)',
-          }}
-        />
-        <div className="relative mx-auto max-w-lg rounded-3xl border border-amber-200/80 bg-amber-50/90 p-8 shadow-xl backdrop-blur-sm dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-50">
-          <h1 className="font-display text-xl font-semibold text-amber-950 dark:text-amber-100">API URL not configured</h1>
-          <p className="mb-4 mt-2 text-sm text-amber-900/90 dark:text-amber-200/90">
-            Production builds must set{' '}
-            <code className="rounded-md bg-amber-900/10 px-1.5 py-0.5 text-xs dark:bg-black/30">NEXT_PUBLIC_API_BASE_URL</code>{' '}
-            to your backend root including <code className="rounded-md bg-amber-900/10 px-1.5 py-0.5 text-xs dark:bg-black/30">/api</code>{' '}
-            (same as the mobile app’s backend URL). Example:{' '}
-            <code className="break-all rounded-md bg-amber-900/10 px-1.5 py-0.5 text-xs dark:bg-black/30">
-              https://api.trivaller.com/api
-            </code>
-          </p>
-          <p className="text-sm text-amber-800/80 dark:text-amber-300/80">
-            Add it in your host’s environment variables, then redeploy the site. See <code>.env.example</code> in this
-            repo.
-          </p>
-        </div>
-      </div>
-    )
-  }
-
-  if (!token) {
-    return (
-      <div className="relative min-h-screen overflow-hidden bg-[var(--color-bg)] px-4 py-12 sm:py-20 dark:bg-neutral-950">
-        <div
-          className="pointer-events-none absolute inset-0 opacity-50 dark:opacity-30"
-          style={{
-            background:
-              'radial-gradient(ellipse 100% 80% at 50% -30%, rgba(5, 150, 105, 0.25), transparent), radial-gradient(ellipse 70% 50% at 0% 100%, rgba(16, 185, 129, 0.08), transparent), radial-gradient(ellipse 50% 40% at 100% 80%, rgba(4, 120, 87, 0.06), transparent)',
-          }}
-        />
-        <div className="relative mx-auto w-full max-w-md">
-          <div className="mb-8 flex flex-col items-center text-center">
-            <div className="mb-4 flex size-16 items-center justify-center rounded-2xl bg-[var(--color-surface)] shadow-lg ring-1 ring-black/5 dark:bg-neutral-900 dark:ring-white/10">
-              <img src="/mark.png" alt="" className="size-10 object-contain" width={40} height={40} />
-            </div>
-            <h1 className="font-display text-3xl font-bold tracking-tight text-[var(--color-text-primary)] dark:text-white">
-              Admin
-            </h1>
-            <p className="mt-2 max-w-sm text-sm leading-relaxed text-[var(--color-text-secondary)]">
-              Staff workspace for reviewing posts, guides, place details, and business listings. This URL is not linked
-              on the public site.
+        <div className="mx-auto flex w-full max-w-[440px] flex-1 flex-col justify-center py-10">
+          <div className="rounded-[28px] border border-white/15 bg-white p-6 shadow-[0_24px_80px_rgba(0,0,0,0.28)] sm:p-8">
+            <p className="inline-flex items-center gap-2 rounded-full bg-forest-mid px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-ink">
+              <BadgeCheck size={13} strokeWidth={1.75} className="text-ink" />
+              Staff only
             </p>
-          </div>
+            <h1 className="mt-4 font-display text-3xl font-semibold tracking-tight text-ink sm:text-4xl">Sign in to moderate</h1>
+            <p className="mt-2 text-sm leading-relaxed text-muted">
+              Review posts, guides, place details, and businesses before they go live.
+            </p>
 
-          <div className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface)]/95 p-8 shadow-xl shadow-emerald-900/5 backdrop-blur-md dark:border-neutral-800 dark:bg-neutral-900/95 dark:shadow-black/40">
-            <form onSubmit={handleLogin} className="space-y-5">
-              <div>
-                <label
-                  htmlFor="admin-email"
-                  className="mb-1.5 block text-sm font-medium text-[var(--color-text-primary)] dark:text-neutral-200"
-                >
-                  Email
-                </label>
+            <form onSubmit={onSubmit} className="mt-7 space-y-4">
+              <label className="block">
+                <span className="mb-1.5 block text-sm font-medium text-ink">Email</span>
                 <input
                   id="admin-email"
                   type="email"
                   autoComplete="username"
                   value={email}
-                  onChange={(ev) => setEmail(ev.target.value)}
-                  className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] px-4 py-3 text-[var(--color-text-primary)] outline-none transition focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary-muted)] dark:border-neutral-600 dark:bg-neutral-800/80 dark:text-white dark:focus:border-emerald-500"
+                  onChange={(ev) => onEmail(ev.target.value)}
+                  placeholder="admin@trivaller.demo"
+                  className="w-full rounded-2xl border border-line bg-forest px-4 py-3.5 text-ink outline-none transition placeholder:text-muted/70 focus:border-emerald focus:bg-white focus:ring-2 focus:ring-emerald/20"
                   required
                 />
-              </div>
-              <div>
-                <label
-                  htmlFor="admin-password"
-                  className="mb-1.5 block text-sm font-medium text-[var(--color-text-primary)] dark:text-neutral-200"
-                >
-                  Password
-                </label>
-                <input
-                  id="admin-password"
-                  type="password"
-                  autoComplete="current-password"
-                  value={password}
-                  onChange={(ev) => setPassword(ev.target.value)}
-                  className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] px-4 py-3 text-[var(--color-text-primary)] outline-none transition focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary-muted)] dark:border-neutral-600 dark:bg-neutral-800/80 dark:text-white dark:focus:border-emerald-500"
-                  required
-                />
-              </div>
-              {error && (
-                <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900/50 dark:bg-red-950/50 dark:text-red-200">
-                  {error}
+              </label>
+              <label className="block">
+                <span className="mb-1.5 block text-sm font-medium text-ink">Password</span>
+                <div className="relative">
+                  <input
+                    id="admin-password"
+                    type={showPassword ? 'text' : 'password'}
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={(ev) => onPassword(ev.target.value)}
+                    placeholder="••••••••"
+                    className="w-full rounded-2xl border border-line bg-forest px-4 py-3.5 pr-12 text-ink outline-none transition placeholder:text-muted/70 focus:border-emerald focus:bg-white focus:ring-2 focus:ring-emerald/20"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-muted hover:text-ink"
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? <EyeOff size={18} strokeWidth={1.75} className="text-ink" /> : <Eye size={18} strokeWidth={1.75} className="text-ink" />}
+                  </button>
                 </div>
+              </label>
+
+              {error && (
+                <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
+                  {error}
+                </p>
               )}
+
               <button
                 type="submit"
                 disabled={loading}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--color-primary)] py-3.5 font-semibold text-white shadow-md transition hover:bg-[var(--color-primary-dark)] disabled:pointer-events-none disabled:opacity-50"
+                className="flex w-full items-center justify-center gap-2 rounded-full bg-emerald py-3.5 text-sm font-semibold text-white transition hover:bg-emerald-bright disabled:pointer-events-none disabled:opacity-50"
               >
                 {loading ? (
                   <>
-                    <Spinner className="!size-5 text-white" />
+                    <Spinner className="text-white" />
                     Signing in…
                   </>
                 ) : (
@@ -542,104 +338,341 @@ export default function AdminModeration() {
           </div>
         </div>
       </div>
+    </div>
+  )
+}
+
+function EntryCard({
+  entry,
+  busy,
+  onApprove,
+  onReject,
+}: {
+  entry: Entry
+  busy: boolean
+  onApprove: (type: QueueType, id: number) => void
+  onReject: (type: QueueType, id: number) => void
+}) {
+  const meta = TYPE_META[entry.type] ?? TYPE_META.POST
+  const Icon = meta.icon
+
+  return (
+    <article className="overflow-hidden rounded-3xl border border-line bg-white shadow-soft">
+      <div className="flex flex-col sm:flex-row">
+        <div className="relative h-48 shrink-0 bg-forest-mid sm:h-auto sm:w-52">
+          {entry.imageUrl ? (
+            // User-submitted URLs are not always in next/image remotePatterns.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={entry.imageUrl} alt="" className="absolute inset-0 size-full object-cover" />
+          ) : (
+            <div className="flex size-full min-h-48 items-center justify-center text-ink">
+              <Icon size={28} strokeWidth={1.5} />
+            </div>
+          )}
+        </div>
+        <div className="flex min-w-0 flex-1 flex-col p-5 sm:p-6">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={cn('inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide', meta.chip)}>
+              <Icon size={13} strokeWidth={1.75} className="text-ink" />
+              {meta.label}
+            </span>
+            {entry.createdAt && (
+              <time className="text-xs text-muted" dateTime={entry.createdAt} title={new Date(entry.createdAt).toLocaleString()}>
+                {relativeTime(entry.createdAt)}
+              </time>
+            )}
+          </div>
+          <h3 className="mt-3 font-display text-xl font-semibold tracking-tight text-ink">{entry.title || 'Untitled'}</h3>
+          <p className="mt-1 text-sm text-muted">
+            {entry.authorName || 'Unknown author'}
+            {entry.authorUserId != null && <span> · #{entry.authorUserId}</span>}
+            {entry.postId != null && <span> · post {entry.postId}</span>}
+          </p>
+          <div className="mt-5 flex flex-wrap gap-2">
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => onApprove(entry.type, entry.id)}
+              className="inline-flex items-center gap-1.5 rounded-full bg-emerald px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-bright disabled:opacity-45"
+            >
+              <Check size={16} strokeWidth={2} className="text-white" />
+              Approve
+            </button>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => onReject(entry.type, entry.id)}
+              className="inline-flex items-center gap-1.5 rounded-full border border-black/10 bg-white px-4 py-2.5 text-sm font-semibold text-ink transition hover:bg-forest-mid disabled:opacity-45"
+            >
+              <X size={16} strokeWidth={2} className="text-ink" />
+              Reject
+            </button>
+          </div>
+        </div>
+      </div>
+    </article>
+  )
+}
+
+export default function AdminModeration() {
+  const apiBase = resolveApiBase()
+  const [token, setToken] = useState<string | null>(null)
+  const [hydrated, setHydrated] = useState(false)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [data, setData] = useState<PendingPayload | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [tab, setTab] = useState<TabKey>('all')
+
+  useEffect(() => {
+    setToken(sessionStorage.getItem(TOKEN_KEY))
+    setHydrated(true)
+  }, [])
+
+  const load = useCallback(
+    async (t: string) => {
+      setLoading(true)
+      setError('')
+      try {
+        setData(await apiPending(apiBase, t))
+      } catch (e) {
+        const message = e instanceof Error ? e.message : 'Failed to load'
+        if (message === 'unauthorized') {
+          sessionStorage.removeItem(TOKEN_KEY)
+          setToken(null)
+          setError('Session expired or this account is not an admin. Sign in again.')
+        } else {
+          setError(message)
+        }
+      } finally {
+        setLoading(false)
+      }
+    },
+    [apiBase],
+  )
+
+  useEffect(() => {
+    if (hydrated && token && apiBase) load(token)
+  }, [token, load, apiBase, hydrated])
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    setLoading(true)
+    try {
+      const t = await apiLogin(apiBase, email.trim(), password)
+      sessionStorage.setItem(TOKEN_KEY, t)
+      setPassword('')
+      setToken(t)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Login failed')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const logout = () => {
+    sessionStorage.removeItem(TOKEN_KEY)
+    setToken(null)
+    setData(null)
+    setTab('all')
+  }
+
+  const runAction = async (path: 'approve' | 'reject', type: QueueType, id: number) => {
+    if (!token) return
+    setBusy(true)
+    try {
+      await apiAction(apiBase, path, token, type, id)
+      await load(token)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : `${path} failed`)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const counts = {
+    posts: data?.posts.length ?? 0,
+    guides: data?.guides.length ?? 0,
+    placeDetails: data?.placeDetails.length ?? 0,
+    businesses: data?.businesses.length ?? 0,
+  }
+  const total = counts.posts + counts.guides + counts.placeDetails + counts.businesses
+
+  const visible = useMemo(() => {
+    if (!data) return []
+    if (tab === 'all') {
+      return [...data.posts, ...data.guides, ...data.placeDetails, ...data.businesses].sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      )
+    }
+    const field = TABS.find((t) => t.key === tab)?.field
+    return field ? data[field] : []
+  }, [data, tab])
+
+  if (!hydrated) {
+    return (
+      <div className="grid min-h-svh place-items-center bg-forest text-sm text-muted">
+        <Spinner className="text-emerald" />
+      </div>
     )
   }
 
-  const pendingPosts = data?.posts?.length ?? 0
-  const pendingGuides = data?.guides?.length ?? 0
-  const pendingPlaceDetails = data?.placeDetails?.length ?? 0
-  const pendingBusinesses = data?.businesses?.length ?? 0
-  const totalPending =
-    data != null ? pendingPosts + pendingGuides + pendingPlaceDetails + pendingBusinesses : null
+  if (!apiBase) {
+    return (
+      <div className="grid min-h-svh place-items-center bg-forest px-4">
+        <div className="max-w-md rounded-3xl bg-white p-8 shadow-soft">
+          <h1 className="font-display text-2xl font-semibold text-ink">API URL not configured</h1>
+          <p className="mt-3 text-sm leading-relaxed text-muted">
+            Set <code className="rounded-md bg-forest-mid px-1.5 py-0.5 text-ink">NEXT_PUBLIC_API_BASE_URL</code> to your
+            NestJS root including <code className="rounded-md bg-forest-mid px-1.5 py-0.5 text-ink">/api</code>, then
+            redeploy.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!token) {
+    return (
+      <LoginScreen
+        email={email}
+        password={password}
+        error={error}
+        loading={loading}
+        onEmail={setEmail}
+        onPassword={setPassword}
+        onSubmit={handleLogin}
+      />
+    )
+  }
 
   return (
-    <div className="min-h-screen bg-[var(--color-bg)] dark:bg-neutral-950">
-      <div
-        className="pointer-events-none fixed inset-x-0 top-0 h-48 bg-gradient-to-b from-[var(--color-primary-muted)]/50 to-transparent dark:from-emerald-950/30"
-        aria-hidden
-      />
-
-      <header className="sticky top-0 z-10 border-b border-[var(--color-border)]/80 bg-[var(--color-surface)]/85 px-4 py-4 backdrop-blur-md dark:border-neutral-800 dark:bg-neutral-950/80">
-        <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-4">
+    <div className="min-h-svh bg-forest">
+      <header className="sticky top-0 z-20 px-4 pt-4 sm:px-6">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 rounded-full border border-black/10 bg-white px-3 py-2 shadow-soft sm:px-4">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-[var(--color-primary-muted)] dark:bg-emerald-950/50">
-              <img src="/mark.png" alt="" className="size-7 object-contain" width={28} height={28} />
-            </div>
+            <Image src="/mark.png" alt="" width={36} height={36} className="rounded-full" />
             <div className="min-w-0">
-              <h1 className="font-display text-lg font-bold text-[var(--color-text-primary)] sm:text-xl dark:text-white">
-                Moderation
-              </h1>
-              <p className="truncate text-xs text-[var(--color-text-secondary)] sm:text-sm">
-                Review and approve user-submitted content
-              </p>
+              <p className="truncate text-sm font-semibold tracking-tight text-ink sm:text-base">Moderation</p>
+              <p className="hidden text-xs text-muted sm:block">Publish queue for the Trivaller app</p>
             </div>
+            <span className="hidden rounded-full bg-emerald/10 px-2.5 py-1 text-xs font-semibold text-emerald-dim sm:inline">
+              {total} pending
+            </span>
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <button
               type="button"
-              onClick={() => load(token)}
+              onClick={() => token && load(token)}
               disabled={loading || busy}
-              className="inline-flex items-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-2 text-sm font-medium text-[var(--color-text-primary)] transition hover:bg-[var(--color-bg)] disabled:opacity-45 dark:border-neutral-600 dark:bg-neutral-900 dark:text-neutral-200 dark:hover:bg-neutral-800"
+              className="inline-flex items-center gap-2 rounded-full border border-black/10 px-3 py-2 text-sm font-medium text-ink transition hover:bg-forest-mid disabled:opacity-45"
             >
-              {(loading || busy) && <Spinner className="!size-4" />}
-              Refresh
+              <RotateCw size={15} strokeWidth={1.75} className={cn('text-ink', (loading || busy) && 'animate-spin')} />
+              <span className="hidden sm:inline">Refresh</span>
             </button>
             <button
               type="button"
               onClick={logout}
-              className="rounded-xl border border-transparent bg-neutral-200/80 px-4 py-2 text-sm font-medium text-neutral-800 transition hover:bg-neutral-300/80 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700"
+              className="inline-flex items-center gap-2 rounded-full bg-forest-deep px-3 py-2 text-sm font-medium text-white transition hover:bg-ink"
             >
-              Sign out
+              <LogOut size={15} strokeWidth={1.75} />
+              <span className="hidden sm:inline">Sign out</span>
             </button>
           </div>
         </div>
       </header>
 
-      <main className="relative mx-auto max-w-4xl px-4 py-8 sm:py-10">
+      <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
         {error && (
-          <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-800 shadow-sm dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-200">
+          <p className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
             {error}
-          </div>
+          </p>
         )}
 
         {loading && !data && (
-          <div className="flex flex-col items-center justify-center gap-4 rounded-3xl border border-dashed border-[var(--color-border)] bg-[var(--color-surface)]/50 py-20 dark:border-neutral-700 dark:bg-neutral-900/30">
-            <Spinner className="!size-10" />
-            <p className="text-sm font-medium text-[var(--color-text-secondary)]">Loading moderation queue…</p>
+          <div className="flex flex-col items-center gap-3 rounded-3xl bg-white py-20 shadow-soft">
+            <Spinner className="size-8 text-emerald" />
+            <p className="text-sm text-muted">Loading the queue…</p>
           </div>
         )}
 
         {data && (
           <>
-            <div className="mb-10 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-              <StatCard label="Total pending" value={totalPending} accent="text-[var(--color-primary)]" />
-              <StatCard label="Posts" value={pendingPosts} accent="text-[var(--color-text-primary)] dark:text-neutral-100" />
-              <StatCard label="Guides" value={pendingGuides} accent="text-[var(--color-text-primary)] dark:text-neutral-100" />
-              <StatCard
-                label="Place details"
-                value={pendingPlaceDetails}
-                accent="text-[var(--color-text-primary)] dark:text-neutral-100"
-              />
-              <StatCard
-                label="Businesses"
-                value={pendingBusinesses}
-                accent="text-[var(--color-text-primary)] dark:text-neutral-100"
-              />
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {STATS.map((stat) => {
+                const Icon = stat.icon
+                const active = tab === stat.key
+                return (
+                  <button
+                    key={stat.key}
+                    type="button"
+                    onClick={() => setTab(stat.key)}
+                    className={cn(
+                      'rounded-3xl border bg-white p-4 text-left shadow-soft transition',
+                      active ? 'border-ink ring-2 ring-ink/10' : 'border-transparent hover:border-line',
+                    )}
+                  >
+                    <Icon size={20} strokeWidth={1.5} className="text-ink" />
+                    <p className="mt-3 font-display text-3xl font-semibold tabular-nums tracking-tight text-ink">{counts[stat.field]}</p>
+                    <p className="mt-1 text-sm text-muted">{stat.label}</p>
+                  </button>
+                )
+              })}
             </div>
-            <p className="mb-8 text-center text-sm text-[var(--color-text-muted)] sm:text-left">
-              Approve to publish, or reject to send back. Actions apply immediately.
-            </p>
 
-            <Section title="Place posts" entries={data.posts} onApprove={onApprove} onReject={onReject} busy={busy} />
-            <Section title="Guides" entries={data.guides} onApprove={onApprove} onReject={onReject} busy={busy} />
-            <Section
-              title="Place details"
-              entries={data.placeDetails}
-              onApprove={onApprove}
-              onReject={onReject}
-              busy={busy}
-            />
-            <Section title="Business listings" entries={data.businesses} onApprove={onApprove} onReject={onReject} busy={busy} />
+            <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap gap-1 rounded-full border border-black/10 bg-white p-1">
+                {TABS.map((item) => {
+                  const n = item.key === 'all' ? total : item.field ? counts[item.field] : 0
+                  const TabIcon = item.icon
+                  return (
+                    <button
+                      key={item.key}
+                      type="button"
+                      onClick={() => setTab(item.key)}
+                      className={cn(
+                        'inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium transition',
+                        tab === item.key ? 'bg-forest-deep text-white' : 'text-muted hover:text-ink',
+                      )}
+                    >
+                      {TabIcon && <TabIcon size={14} strokeWidth={1.75} className={tab === item.key ? 'text-white' : 'text-ink'} />}
+                      {item.label}
+                      <span className={cn('ml-1 tabular-nums', tab === item.key ? 'text-white/70' : 'text-muted')}>{n}</span>
+                    </button>
+                  )
+                })}
+              </div>
+              <p className="text-sm text-muted">Approve to publish. Reject hides it from the public feed.</p>
+            </div>
+
+            <div className="mt-6 space-y-4">
+              {visible.length === 0 ? (
+                <div className="rounded-3xl bg-white px-6 py-12 text-center shadow-soft">
+                  <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-forest-mid text-ink">
+                    <Inbox size={22} strokeWidth={1.5} />
+                  </div>
+                  <h2 className="mt-4 font-display text-2xl font-semibold text-ink">Queue is clear</h2>
+                  <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-muted">
+                    {tab === 'all'
+                      ? 'Nothing is waiting for review. New submissions will appear here.'
+                      : `No pending ${TABS.find((t) => t.key === tab)?.label.toLowerCase()} right now.`}
+                  </p>
+                </div>
+              ) : (
+                visible.map((entry) => (
+                  <EntryCard
+                    key={`${entry.type}-${entry.id}`}
+                    entry={entry}
+                    busy={busy}
+                    onApprove={(type, id) => runAction('approve', type, id)}
+                    onReject={(type, id) => runAction('reject', type, id)}
+                  />
+                ))
+              )}
+            </div>
           </>
         )}
       </main>

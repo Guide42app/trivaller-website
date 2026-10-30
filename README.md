@@ -23,9 +23,9 @@ Open [http://localhost:3000](http://localhost:3000).
 
 See `.env.example`.
 
-- **`DEV_BACKEND_ORIGIN`** — local rewrite target for `/api/trivaller-backend/*` (default `http://127.0.0.1:8081`)
+- **`DEV_BACKEND_ORIGIN`** — local rewrite target for `/api/trivaller-backend/*` (default `http://127.0.0.1:8080`, NestJS)
 - **`NEXT_PUBLIC_API_BASE_URL`** — browser API base for the admin panel (prefer `/api/trivaller-backend`)
-- **`BACKEND_HTTP_ORIGIN`** — Vercel serverless proxy target (`api/trivaller-proxy.js`)
+- **`BACKEND_HTTP_ORIGIN`** — Vercel serverless proxy target (`app/api/trivaller-backend`)
 
 ## Routes
 

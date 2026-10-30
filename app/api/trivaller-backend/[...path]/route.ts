@@ -1,7 +1,7 @@
 /**
- * Proxies /api/trivaller-backend/* to the Spring backend so the HTTPS site can reach an HTTP EC2 host.
+ * Proxies /api/trivaller-backend/* to NestJS so the HTTPS site can reach an HTTP API host.
  *
- * Env: BACKEND_HTTP_ORIGIN=http://YOUR_EC2_IP:8080 (no /api)
+ * Env: BACKEND_HTTP_ORIGIN=http://YOUR_HOST:8080 (no /api)
  */
 export const dynamic = 'force-dynamic'
 
@@ -30,20 +30,20 @@ async function proxy(req: Request, { params }: Context) {
     return Response.json(
       {
         message:
-          'BACKEND_HTTP_ORIGIN is not set. In Vercel → Environment Variables, set BACKEND_HTTP_ORIGIN=http://YOUR_EC2_IP:8080',
+          'BACKEND_HTTP_ORIGIN is not set. In Vercel → Environment Variables, set BACKEND_HTTP_ORIGIN=http://YOUR_NEST_HOST:8080',
       },
       { status: 502 },
     )
   }
 
   const { path } = await params
-  const springPath = path?.join('/') ?? ''
-  if (!springPath) {
+  const apiPath = path?.join('/') ?? ''
+  if (!apiPath) {
     return Response.json({ message: 'Missing API path' }, { status: 404 })
   }
 
   const { search } = new URL(req.url)
-  const target = `${backend.replace(/\/$/, '')}/api/${springPath}${search}`
+  const target = `${backend.replace(/\/$/, '')}/api/${apiPath}${search}`
 
   const headers = new Headers()
   req.headers.forEach((value, key) => {
